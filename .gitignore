@@ -1,3 +1,6 @@
+# чтобы не добавлять токен в библиотеку
+bot/tokens.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -127,6 +130,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-# чтобы не добавлять токен в библиотеку
-bot/tokens.json

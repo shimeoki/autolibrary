@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 
 # чтобы не добавлять токен в библиотеку
-tokens.json
+bot/tokens.json

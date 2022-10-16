@@ -1,6 +1,3 @@
-# чтобы не добавлять токен в репозиторий
-bot/tokens.json
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

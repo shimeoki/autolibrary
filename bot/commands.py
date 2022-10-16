@@ -14,7 +14,7 @@ from utils import (
 )
 
 
-with open('tokens.json', 'r') as f:
+with open('D:\GitHub\.misc\tokens.json', 'r') as f:
     db_token = load(f)["db-token"]
     
 engine = create_engine(db_token)

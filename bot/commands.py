@@ -6,8 +6,8 @@ from telegram.ext import ContextTypes
 from sqlalchemy import create_engine
 
 from db.models import (
-    Students,
-    Books
+    Student,
+    Book
 )
 
 from bot.utils import (
@@ -34,7 +34,7 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     user_data["basket"] = []    # то же самое как и ^^^
     user_data["shop_paginator"] = ItemPaginator(
         engine=engine,
-        item_model=Books,
+        item_model=Book,
         lines=3,
         columns=3
     )
@@ -52,7 +52,7 @@ async def enter_login(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     user_data = ctx.user_data
     login = update.message.text
     
-    getter = ItemGetter(engine, Students)
+    getter = ItemGetter(engine, Student)
     student = getter.get_item("login", login)
     
     if not student:

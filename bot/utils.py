@@ -3,11 +3,13 @@ from telegram import ReplyKeyboardMarkup
 from math import ceil
 
 class ItemPaginator:
-    def __init__(self,
-                 engine, 
-                item_model,
-                lines: int,
-                columns: int) -> None:
+    def __init__(
+        self,
+        engine, 
+        item_model,
+        lines: int,
+        columns: int
+    ) -> None:
         self._engine = engine
         self._item_model = item_model
         

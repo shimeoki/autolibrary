@@ -30,8 +30,8 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     
     user_data["student"] = None
     user_data["login_status"] = None
-    user_data["inventory"] = [] # сделать отдельную таблицу и fetch функцию для получения инвентаря
-    user_data["basket"] = []    # то же самое как и ^^^
+    user_data["inventory"] = []
+    user_data["basket"] = []    
     user_data["shop_paginator"] = ItemPaginator(
         engine=engine,
         item_model=Book,

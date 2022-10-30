@@ -50,7 +50,7 @@ class BookGenre(Base):
     __tablename__ = "book_genres"
     
     id = Column(Integer, primary_key=True)
-    title = Column(String(32), nullable=False)
+    name = Column(String(32), nullable=False)
     
     books = relationship("Book", back_populates="genre")
 

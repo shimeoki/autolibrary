@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pydantic import BaseModel
 
 
@@ -27,17 +28,17 @@ class BookCreate(BookBase):
 
 class Book(BookBase):
     id: int
-    type: "BookType"
-    genre: "BookGenre" | None = None
-    publisher: "Publisher"
-    department: "Department"
-    decommision: "BookDecommision" | None = None
-    student: "Student"
-    state: "BookState"
+    type: BookType
+    genre: BookGenre | None = None
+    publisher: Publisher
+    department: Department
+    decommision: BookDecommision | None = None
+    student: Student
+    state: BookState
     
     class Config:
         orm_mode = True
-        
+
 
 class BookTypeBase(BaseModel):
     name: str
@@ -152,3 +153,6 @@ class BookState(BookStateBase):
     
     class Config:
         orm_mode = True
+        
+
+Book.update_forward_refs()

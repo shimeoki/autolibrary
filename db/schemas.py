@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BookBase(BaseModel):
@@ -7,11 +7,11 @@ class BookBase(BaseModel):
     author: str
     series: str | None = None
     page_total: int
-    publication_year: str # поставить отдельный класс для года
-    receipt_year: str     # ^ ^ ^
+    publication_year: str = Field(min_length=4, max_length=4)
+    receipt_year: str = Field(min_length=4, max_length=4)
     price: float | None = None
-    isbn: str | None = None # поставить отдельный класс для ISBN
-    bbk: str | None = None  # поставить отдельный класс для BBK
+    isbn: str | None = Field(default=None, min_length=17, max_length=17)
+    bbk: str | None = Field(default=None, max_length=32)
     receive_date: str | None = None # поставить отдельный класс для даты
     return_date: str | None = None  # ^ ^ ^
     

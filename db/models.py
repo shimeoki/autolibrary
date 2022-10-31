@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, SmallInteger, Numeric, DATE
+from sqlalchemy import Column, String, Integer, ForeignKey, SmallInteger, Numeric
 from sqlalchemy.orm import declarative_base, relationship
 
 
@@ -25,8 +25,8 @@ class Book(Base):
     decommision_id = Column(Integer, ForeignKey("book_decommisions.id"))
     student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
     state_id = Column(SmallInteger, ForeignKey("book_states.id"), nullable=False)
-    receive_date = Column(DATE)
-    return_date = Column(DATE)
+    receive_date = Column(String(10))
+    return_date = Column(String(10))
     
     type = relationship("BookType", back_populates="books")
     genre = relationship("BookGenre", back_populates="books")

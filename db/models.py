@@ -1,104 +1,108 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, SmallInteger, Numeric
-from sqlalchemy.orm import declarative_base, relationship
+from typing import Optional
+from datetime import date
+
+from sqlalchemy import String, ForeignKey, Numeric
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
 class Book(Base):
     __tablename__ = "books"
     
-    id = Column(Integer, primary_key=True)
-    type_id = Column(SmallInteger, ForeignKey("book_types.id"), nullable=False)
-    title = Column(String(64), nullable=False)
-    author = Column(String(64), nullable=False)
-    series = Column(String(64))
-    genre_id = Column(Integer, ForeignKey("book_genres.id"))
-    page_total = Column(Integer, nullable=False)
-    publisher_id = Column(Integer, ForeignKey("publishers.id"), nullable=False)
-    publication_year = Column(String(4), nullable=False)
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=False)
-    receipt_year = Column(String(4), nullable=False)
-    price = Column(Numeric(19, 4))
-    isbn = Column(String(17))
-    bbk = Column(String(32))
-    decommision_id = Column(Integer, ForeignKey("book_decommisions.id"))
-    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
-    state_id = Column(SmallInteger, ForeignKey("book_states.id"), nullable=False)
-    receive_date = Column(String(10))
-    return_date = Column(String(10))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    type_id: Mapped[int] = mapped_column(ForeignKey("book_types.id"))
+    title: Mapped[str]
+    author: Mapped[str]
+    series: Mapped[Optional[str]]
+    genre_id: Mapped[Optional[int]] = mapped_column(ForeignKey("book_genres.id"))
+    page_total: Mapped[int]
+    publisher_id: Mapped[int] = mapped_column(ForeignKey("publishers.id"))
+    publication_year: Mapped[str] = mapped_column(String(4))
+    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"))
+    receipt_year: Mapped[str] = mapped_column(String(4))
+    price: Mapped[Optional[float]] = mapped_column(Numeric(19, 4))
+    isbn: Mapped[Optional[str]] = mapped_column(String(17))
+    bbk: Mapped[Optional[str]]
+    decommision_id: Mapped[Optional[int]] = mapped_column(ForeignKey("book_decommisions.id"))
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"))
+    state_id: Mapped[int] = mapped_column(ForeignKey("book_states.id"))
+    receive_date: Mapped[Optional[date]] = mapped_column(String(10))
+    return_date: Mapped[Optional[date]] = mapped_column(String(10))
     
-    type = relationship("BookType", back_populates="books")
-    genre = relationship("BookGenre", back_populates="books")
-    publisher = relationship("Publisher", back_populates="books")
-    department = relationship("Department", back_populates="books")
-    decommision = relationship("BookDecommision", back_populates="books")
-    student = relationship("Student", back_populates="books")
-    state = relationship("BookState", back_populates="books")
+    type: Mapped["BookType"] = relationship(back_populates="books")
+    genre: Mapped["BookGenre"] = relationship(back_populates="books")
+    publisher: Mapped["Publisher"] = relationship(back_populates="books")
+    department: Mapped["Department"] = relationship(back_populates="books")
+    decommision: Mapped["BookDecommision"] = relationship(back_populates="books")
+    student: Mapped["Student"] = relationship(back_populates="books")
+    state: Mapped["BookState"] = relationship(back_populates="books")
 
 
 class BookType(Base):
     __tablename__ = "book_types"
     
-    id = Column(SmallInteger, primary_key=True)
-    name = Column(String(32), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
     
-    books = relationship("Book", back_populates="type")
+    books: Mapped["Book"] = relationship(back_populates="type")
 
 
 class BookGenre(Base):
     __tablename__ = "book_genres"
     
-    id = Column(Integer, primary_key=True)
-    name = Column(String(32), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
     
-    books = relationship("Book", back_populates="genre")
+    books: Mapped["Book"] = relationship(back_populates="genre")
 
 
 class Publisher(Base):
     __tablename__ = "publishers"
     
-    id = Column(Integer, primary_key=True)
-    name = Column(String(64), nullable=False)
-    city = Column(String(16), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    city: Mapped[str]
     
-    books = relationship("Book", back_populates="publisher")
+    books: Mapped["Book"] = relationship(back_populates="publisher")
     
 
 class Department(Base):
     __tablename__ = "departments"
     
-    id = Column(Integer, primary_key=True)
-    name = Column(String(32), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
     
-    books = relationship("Book", back_populates="department")
+    books: Mapped["Book"] = relationship(back_populates="department")
 
 
 class BookDecommision(Base):
     __tablename__ = "book_decommisions"
     
-    id = Column(Integer, primary_key=True)
-    books_total = Column(Integer, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    books_total: Mapped[int]
     
-    books = relationship("Book", back_populates="decommision")
+    books: Mapped["Book"] = relationship(back_populates="decommision")
 
 
 class Student(Base):
     __tablename__ = "students"
     
-    id = Column(Integer, primary_key=True)
-    first_name = Column(String(32), nullable=False)
-    last_name = Column(String(32), nullable=False)
-    login = Column(String(32), nullable=False)
-    password = Column(String(32), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    first_name: Mapped[str]
+    last_name: Mapped[str]
+    login: Mapped[str]
+    hashed_password: Mapped[str]
     
-    books = relationship("Book", back_populates="student")
+    books: Mapped["Book"] = relationship(back_populates="student")
 
   
 class BookState(Base):
     __tablename__ = "book_states"
     
-    id = Column(SmallInteger, primary_key=True)
-    name = Column(String(32), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
     
-    books = relationship("Book", back_populates="state")
+    books: Mapped["Book"] = relationship(back_populates="state")

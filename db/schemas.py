@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import date
 from pydantic import BaseModel, Field
 
 
@@ -12,8 +13,8 @@ class BookBase(BaseModel):
     price: float | None = None
     isbn: str | None = Field(default=None, min_length=17, max_length=17)
     bbk: str | None = Field(default=None, max_length=32)
-    receive_date: str | None = None # поставить отдельный класс для даты
-    return_date: str | None = None  # ^ ^ ^
+    receive_date: date | None = None # поставить отдельный класс для даты
+    return_date: date | None = None  # ^ ^ ^
     
 
 class BookCreate(BookBase):

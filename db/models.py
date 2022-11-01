@@ -6,13 +6,12 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
-    pass
+    id: Mapped[int] = mapped_column(primary_key=True)
 
 
 class Book(Base):
     __tablename__ = "books"
     
-    id: Mapped[int] = mapped_column(primary_key=True)
     type_id: Mapped[int] = mapped_column(ForeignKey("book_types.id"))
     title: Mapped[str]
     author: Mapped[str]
@@ -44,7 +43,6 @@ class Book(Base):
 class BookType(Base):
     __tablename__ = "book_types"
     
-    id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
     
     books: Mapped[list["Book"]] = relationship(back_populates="type")
@@ -53,7 +51,6 @@ class BookType(Base):
 class BookGenre(Base):
     __tablename__ = "book_genres"
     
-    id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
     
     books: Mapped[list["Book"]] = relationship(back_populates="genre")
@@ -62,7 +59,6 @@ class BookGenre(Base):
 class Publisher(Base):
     __tablename__ = "publishers"
     
-    id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
     city: Mapped[str]
     
@@ -72,7 +68,6 @@ class Publisher(Base):
 class Department(Base):
     __tablename__ = "departments"
     
-    id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
     
     books: Mapped[list["Book"]] = relationship(back_populates="department")
@@ -81,7 +76,6 @@ class Department(Base):
 class BookDecommision(Base):
     __tablename__ = "book_decommisions"
     
-    id: Mapped[int] = mapped_column(primary_key=True)
     books_total: Mapped[int]
     
     books: Mapped[list["Book"]] = relationship(back_populates="decommision")
@@ -90,7 +84,6 @@ class BookDecommision(Base):
 class Student(Base):
     __tablename__ = "students"
     
-    id: Mapped[int] = mapped_column(primary_key=True)
     first_name: Mapped[str]
     last_name: Mapped[str]
     login: Mapped[str]
@@ -102,7 +95,6 @@ class Student(Base):
 class BookState(Base):
     __tablename__ = "book_states"
     
-    id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
     
     books: Mapped[list["Book"]] = relationship(back_populates="state")

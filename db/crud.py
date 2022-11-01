@@ -3,13 +3,12 @@ from sqlalchemy.orm import Session
 from db import models, schemas
 
 
-# отдельный класс RepoBase чтобы не прописывать __init__
-
-
-class BookRepo:
+class RepoBase:
     def __init__(self, session: Session):
         self._session = session
-        
+
+
+class BookRepo(RepoBase):
     def create(self, book: schemas.BookCreate) -> models.Book:
         db_book = models.Book(**book.dict())
         
@@ -36,10 +35,7 @@ class BookRepo:
         session.commit()
         
 
-class BookTypeRepo:
-    def __init__(self, session: Session):
-        self._session = session
-        
+class BookTypeRepo(RepoBase):
     def create(self, book_type: schemas.BookTypeCreate) -> models.BookType:
         db_book_type = models.BookType(**book_type.dict())
         
@@ -66,10 +62,7 @@ class BookTypeRepo:
         session.commit()
         
         
-class BookGenreRepo:
-    def __init__(self, session: Session):
-        self._session = session
-        
+class BookGenreRepo(RepoBase):
     def create(self, book_genre: schemas.BookGenreCreate) -> models.BookGenre:
         db_book_genre = models.BookGenre(**book_genre.dict())
         
@@ -96,10 +89,7 @@ class BookGenreRepo:
         session.commit()
         
         
-class PublisherRepo:
-    def __init__(self, session: Session):
-        self._session = session
-        
+class PublisherRepo(RepoBase):
     def create(self, publisher: schemas.PublisherCreate) -> models.Publisher:
         db_publisher = models.BookType(**publisher.dict())
         
@@ -126,10 +116,7 @@ class PublisherRepo:
         session.commit()
         
         
-class DepartmentRepo:
-    def __init__(self, session: Session):
-        self._session = session
-        
+class DepartmentRepo(RepoBase):
     def create(self, department: schemas.DepartmentCreate) -> models.Department:
         db_department = models.BookType(**department.dict())
         
@@ -156,10 +143,7 @@ class DepartmentRepo:
         session.commit()
         
 
-class BookDecommisionRepo:
-    def __init__(self, session: Session):
-        self._session = session
-        
+class BookDecommisionRepo(RepoBase):
     def create(self, book_decommision: schemas.BookDecommisionCreate) -> models.BookDecommision:
         db_book_decommision = models.BookDecommision(**book_decommision.dict())
         
@@ -186,10 +170,7 @@ class BookDecommisionRepo:
         session.commit()
         
         
-class StudentRepo:
-    def __init__(self, session: Session):
-        self._session = session
-        
+class StudentRepo(RepoBase):    
     def create(self, student: schemas.StudentCreate) -> models.Student:
         db_student = models.Student(**student.dict())
         
@@ -216,10 +197,7 @@ class StudentRepo:
         session.commit()
         
 
-class BookStateRepo:
-    def __init__(self, session: Session):
-        self._session = session
-        
+class BookStateRepo(RepoBase):
     def create(self, book_state: schemas.BookStateCreate) -> models.BookState:
         db_book_state = models.BookState(**book_state.dict())
         

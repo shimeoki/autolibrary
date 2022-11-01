@@ -1,21 +1,39 @@
-from json import load
+from fastapi import Depends, Request
+from sqlalchemy.orm import Session
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from db import crud
 
 
-with open('D:/GitHub/.misc/tokens.json', 'r') as f:
-    db_token = load(f)["db-token"]
+def get_db_session(request: Request):
+    session: Session = request.app.state.session_factory()
     
-engine = create_engine(db_token)
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def get_db():
-    session = SessionLocal()
     try: 
         yield session
     finally:
         session.commit()
         session.close()
+        
+
+def get_book_repo(session: Session = Depends(get_db_session)) -> crud.BookRepo:
+    return crud.BookRepo(session)
+
+def get_book_type_repo(session: Session = Depends(get_db_session)) -> crud.BookTypeRepo:
+    return crud.BookTypeRepo(session)
+
+def get_book_genre_repo(session: Session = Depends(get_db_session)) -> crud.BookGenreRepo:
+    return crud.BookGenreRepo(session)
+
+def get_publisher_repo(session: Session = Depends(get_db_session)) -> crud.PublisherRepo:
+    return crud.PublisherRepo(session)
+
+def get_department_repo(session: Session = Depends(get_db_session)) -> crud.DepartmentRepo:
+    return crud.DepartmentRepo(session)
+
+def get_book_decommision_repo(session: Session = Depends(get_db_session)) -> crud.BookDecommisionRepo:
+    return crud.BookDecommisionRepo(session)
+
+def get_student_repo(session: Session = Depends(get_db_session)) -> crud.StudentRepo:
+    return crud.StudentsRepo(session)
+
+def get_book_state_repo(session: Session = Depends(get_db_session)) -> crud.BookStateRepo:
+    return crud.BookStateRepo(session)

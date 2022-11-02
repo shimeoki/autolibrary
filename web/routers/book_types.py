@@ -27,9 +27,9 @@ def read(book_type_id: int, book_type_repo: Session = Depends(get_book_type_repo
 
 @router.get("/", response_model=list[BookType | None], status_code=200)
 def read_all(book_type_repo: Session = Depends(get_book_type_repo)):
-    db_book_types_list = book_type_repo.read_all()
+    db_book_type_list = book_type_repo.read_all()
     
-    return db_book_types_list
+    return db_book_type_list
 
 
 @router.put("/{book_type_id}", status_code=200)

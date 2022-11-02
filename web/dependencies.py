@@ -32,7 +32,7 @@ def get_book_decommision_repo(session: Session = Depends(get_db_session)) -> cru
     return crud.BookDecommisionRepo(session)
 
 def get_student_repo(session: Session = Depends(get_db_session)) -> crud.StudentRepo:
-    return crud.StudentsRepo(session)
+    return crud.StudentRepo(session)
 
 def get_book_state_repo(session: Session = Depends(get_db_session)) -> crud.BookStateRepo:
     return crud.BookStateRepo(session)

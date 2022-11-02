@@ -182,7 +182,7 @@ class PublisherRepo(RepoBase):
     def create(self, publisher: schemas.PublisherCreate) -> models.Publisher:
         session = self._session
         
-        db_publisher = models.BookType(**publisher.dict())
+        db_publisher = models.Publisher(**publisher.dict())
         
         session.add(db_publisher)
         session.commit()
@@ -238,7 +238,7 @@ class DepartmentRepo(RepoBase):
     def create(self, department: schemas.DepartmentCreate) -> models.Department:
         session = self._session
         
-        db_department = models.BookType(**department.dict())
+        db_department = models.Department(**department.dict())
         
         session.add(db_department)
         session.commit()

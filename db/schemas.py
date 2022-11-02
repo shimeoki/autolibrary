@@ -25,7 +25,7 @@ class BookCreate(BookBase):
     publisher_id: int
     department_id: int
     decommision_id: int | None = None
-    student_id: int
+    student_id: int | None = None
     state_id: int
 
 
@@ -36,7 +36,7 @@ class Book(BookBase):
     publisher: Publisher
     department: Department
     decommision: BookDecommision | None = None
-    student: Student
+    student: Student | None = None
     state: BookState
     
     class Config:
@@ -53,7 +53,6 @@ class BookTypeCreate(BookTypeBase):
 
 class BookType(BookTypeBase):
     id: int
-    books: list[Book] = []
     
     class Config:
         orm_mode = True
@@ -69,7 +68,6 @@ class BookGenreCreate(BookGenreBase):
 
 class BookGenre(BookGenreBase):
     id: int
-    books: list[Book] = []
     
     class Config:
         orm_mode = True
@@ -86,7 +84,6 @@ class PublisherCreate(PublisherBase):
 
 class Publisher(PublisherBase):
     id: int
-    books: list[Book] = []
     
     class Config:
         orm_mode = True
@@ -102,7 +99,6 @@ class DepartmentCreate(DepartmentBase):
 
 class Department(DepartmentBase):
     id: int
-    books: list[Book] = []
     
     class Config:
         orm_mode = True
@@ -118,7 +114,6 @@ class BookDecommisionCreate(BookDecommisionBase):
 
 class BookDecommision(BookDecommisionBase):
     id: int
-    books: list[Book] = []
     
     class Config:
         orm_mode = True
@@ -136,7 +131,6 @@ class StudentCreate(StudentBase):
     
 class Student(StudentBase):
     id: int
-    books: list[Book] = []
     
     class Config:
         orm_mode = True
@@ -152,7 +146,6 @@ class BookStateCreate(BookStateBase):
 
 class BookState(BookStateBase):
     id: int
-    books: list[Book] = []
     
     class Config:
         orm_mode = True

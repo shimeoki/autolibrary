@@ -1,3 +1,4 @@
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from db import models, schemas
@@ -31,13 +32,18 @@ class BookRepo(RepoBase):
     # def update(self):
     #     pass
     
-    def delete(self, book_id: int) -> None:
+    def delete(self, book_id: int) -> bool:
         session = self._session
         
         db_book = self.read(book_id)
         
+        if not db_book:
+            return False
+        
         session.delete(db_book)
         session.commit()
+        
+        return True
         
 
 class BookTypeRepo(RepoBase):
@@ -59,18 +65,36 @@ class BookTypeRepo(RepoBase):
         
         return db_book_type
   
-    # def update(self):
-    #     pass
+    def update(self, book_type: schemas.BookCreate, book_type_id: int) -> models.BookType:
+        session = self._session
+        
+        stmt = (
+            update(models.BookType)
+            .where(models.BookType.id == book_type_id)
+            .values(name=book_type.name)
+        )
+        
+        session.execute(stmt)
+        session.commit()
+        
+        db_book_type = self.read(book_type_id)
+        
+        return db_book_type
     
-    def delete(self, book_type_id: int) -> None:
+    def delete(self, book_type_id: int) -> bool:
         session = self._session
         
         db_book_type = self.read(book_type_id)
         
+        if not db_book_type:
+            return False
+        
         session.delete(db_book_type)
         session.commit()
         
-        
+        return True
+     
+       
 class BookGenreRepo(RepoBase):
     def create(self, book_genre: schemas.BookGenreCreate) -> models.BookGenre:
         session = self._session
@@ -93,15 +117,20 @@ class BookGenreRepo(RepoBase):
     # def update(self):
     #     pass
     
-    def delete(self, book_genre_id: int) -> None:
+    def delete(self, book_genre_id: int) -> bool:
         session = self._session
         
         db_book_genre = self.read(book_genre_id)
 
+        if not db_book_genre:
+            return False
+
         session.delete(db_book_genre)
         session.commit()
         
+        return True
         
+
 class PublisherRepo(RepoBase):
     def create(self, publisher: schemas.PublisherCreate) -> models.Publisher:
         session = self._session
@@ -124,13 +153,18 @@ class PublisherRepo(RepoBase):
     # def update(self):
     #     pass
     
-    def delete(self, publisher_id: int) -> None:
+    def delete(self, publisher_id: int) -> bool:
         session = self._session
         
         db_publisher = self.read(publisher_id)
 
+        if not db_publisher:
+            return False
+
         session.delete(db_publisher)
         session.commit()
+        
+        return True
         
         
 class DepartmentRepo(RepoBase):
@@ -155,13 +189,18 @@ class DepartmentRepo(RepoBase):
     # def update(self):
     #     pass
     
-    def delete(self, department_id: int) -> None:
+    def delete(self, department_id: int) -> bool:
         session = self._session
         
         db_department = self.read(department_id)
         
+        if not db_department:
+            return False
+        
         session.delete(db_department)
         session.commit()
+        
+        return True
         
 
 class BookDecommisionRepo(RepoBase):
@@ -186,14 +225,18 @@ class BookDecommisionRepo(RepoBase):
     # def update(self):
     #     pass
     
-    def delete(self, book_decommision_id: int) -> None:
+    def delete(self, book_decommision_id: int) -> bool:
         session = self._session
         
         db_book_decommision = self.read(book_decommision_id)
+        
+        if not db_book_decommision:
+            return False
 
         session.delete(db_book_decommision)
         session.commit()
         
+        return True
         
 class StudentRepo(RepoBase):    
     def create(self, student: schemas.StudentCreate) -> models.Student:
@@ -224,13 +267,18 @@ class StudentRepo(RepoBase):
     # def update(self):
     #     pass
     
-    def delete(self, student_id: int) -> None:
+    def delete(self, student_id: int) -> bool:
         session = self._session
         
         db_student = self.read(student_id)
         
+        if not db_student:
+            return False
+        
         session.delete(db_student)
         session.commit()
+        
+        return True
         
 
 class BookStateRepo(RepoBase):
@@ -255,10 +303,15 @@ class BookStateRepo(RepoBase):
     # def update(self):
     #     pass
     
-    def delete(self, book_state_id: int) -> None:
+    def delete(self, book_state_id: int) -> bool:
         session = self._session
         
         db_book_state = self.read(book_state_id)
         
+        if not db_book_state:
+            return False
+        
         session.delete(db_book_state)
         session.commit()
+        
+        return True

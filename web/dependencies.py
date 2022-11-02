@@ -10,7 +10,6 @@ def get_db_session(request: Request):
     try: 
         yield session
     finally:
-        session.commit()
         session.close()
         
 

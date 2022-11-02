@@ -45,7 +45,7 @@ class BookType(Base):
     
     name: Mapped[str]
     
-    books: Mapped[list["Book"]] = relationship(back_populates="type")
+    books: Mapped[list[Book]] = relationship(back_populates="type")
 
 
 class BookGenre(Base):
@@ -53,7 +53,7 @@ class BookGenre(Base):
     
     name: Mapped[str]
     
-    books: Mapped[list["Book"]] = relationship(back_populates="genre")
+    books: Mapped[list[Book]] = relationship(back_populates="genre")
 
 
 class Publisher(Base):
@@ -62,7 +62,7 @@ class Publisher(Base):
     name: Mapped[str]
     city: Mapped[str]
     
-    books: Mapped[list["Book"]] = relationship(back_populates="publisher")
+    books: Mapped[list[Book]] = relationship(back_populates="publisher")
     
 
 class Department(Base):
@@ -70,7 +70,7 @@ class Department(Base):
     
     name: Mapped[str]
     
-    books: Mapped[list["Book"]] = relationship(back_populates="department")
+    books: Mapped[list[Book]] = relationship(back_populates="department")
 
 
 class BookDecommision(Base):
@@ -78,7 +78,7 @@ class BookDecommision(Base):
     
     books_total: Mapped[int]
     
-    books: Mapped[list["Book"]] = relationship(back_populates="decommision")
+    books: Mapped[list[Book]] = relationship(back_populates="decommision")
 
 
 class Student(Base):
@@ -89,7 +89,7 @@ class Student(Base):
     login: Mapped[str]
     hashed_password: Mapped[str]
     
-    books: Mapped[list["Book"]] = relationship(back_populates="student")
+    books: Mapped[list[Book]] = relationship(back_populates="student")
 
   
 class BookState(Base):
@@ -97,4 +97,4 @@ class BookState(Base):
     
     name: Mapped[str]
     
-    books: Mapped[list["Book"]] = relationship(back_populates="state")
+    books: Mapped[list[Book]] = relationship(back_populates="state")

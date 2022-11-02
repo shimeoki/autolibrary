@@ -1,4 +1,4 @@
-from sqlalchemy import update
+from sqlalchemy import update, select
 from sqlalchemy.orm import Session
 
 from db import models, schemas
@@ -29,8 +29,28 @@ class BookRepo(RepoBase):
         
         return db_book
   
-    # def update(self):
-    #     pass
+    def read_all(self) -> list[models.Book]:
+        session = self._session
+        
+        stmt = select(models.Book)
+        
+        db_book_list = session.scalars(stmt).all()
+        
+        return db_book_list
+ 
+    def update(self, book: schemas.BookCreate, book_id: int) -> bool:
+        session = self._session
+        
+        stmt = (
+            update(models.Book)
+            .where(models.Book.id == book_id)
+            .values(name=book.name)
+        )
+        
+        session.execute(stmt)
+        session.commit()
+        
+        return True
     
     def delete(self, book_id: int) -> bool:
         session = self._session
@@ -65,7 +85,16 @@ class BookTypeRepo(RepoBase):
         
         return db_book_type
   
-    def update(self, book_type: schemas.BookCreate, book_type_id: int) -> models.BookType:
+    def read_all(self) -> list[models.BookType]:
+        session = self._session
+        
+        stmt = select(models.BookType)
+        
+        db_book_type_list = session.scalars(stmt).all()
+        
+        return db_book_type_list
+
+    def update(self, book_type: schemas.BookTypeCreate, book_type_id: int) -> bool:
         session = self._session
         
         stmt = (
@@ -77,9 +106,7 @@ class BookTypeRepo(RepoBase):
         session.execute(stmt)
         session.commit()
         
-        db_book_type = self.read(book_type_id)
-        
-        return db_book_type
+        return True
     
     def delete(self, book_type_id: int) -> bool:
         session = self._session
@@ -114,8 +141,28 @@ class BookGenreRepo(RepoBase):
         
         return db_book_genre 
   
-    # def update(self):
-    #     pass
+    def read_all(self) -> list[models.BookGenre]:
+        session = self._session
+        
+        stmt = select(models.BookGenre)
+        
+        db_book_genre_list = session.scalars(stmt).all()
+        
+        return db_book_genre_list
+    
+    def update(self, book_genre: schemas.BookGenreCreate, book_genre_id: int) -> bool:
+        session = self._session
+        
+        stmt = (
+            update(models.BookGenre)
+            .where(models.BookGenre.id == book_genre_id)
+            .values(name=book_genre.name)
+        )
+        
+        session.execute(stmt)
+        session.commit()
+        
+        return True
     
     def delete(self, book_genre_id: int) -> bool:
         session = self._session
@@ -150,8 +197,28 @@ class PublisherRepo(RepoBase):
         
         return db_publisher
   
-    # def update(self):
-    #     pass
+    def read_all(self) -> list[models.Publisher]:
+        session = self._session
+        
+        stmt = select(models.Publisher)
+        
+        db_publisher_list = session.scalars(stmt).all()
+        
+        return db_publisher_list
+    
+    def update(self, publisher: schemas.PublisherCreate, publisher_id: int) -> bool:
+        session = self._session
+        
+        stmt = (
+            update(models.Publisher)
+            .where(models.Publisher.id == publisher_id)
+            .values(name=publisher.name, city=publisher.city)
+        )
+        
+        session.execute(stmt)
+        session.commit()
+        
+        return True
     
     def delete(self, publisher_id: int) -> bool:
         session = self._session
@@ -186,8 +253,28 @@ class DepartmentRepo(RepoBase):
         
         return db_department
   
-    # def update(self):
-    #     pass
+    def read_all(self) -> list[models.Department]:
+        session = self._session
+        
+        stmt = select(models.Department)
+        
+        db_department_list = session.scalars(stmt).all()
+        
+        return db_department_list
+    
+    def update(self, department: schemas.DepartmentCreate, department_id: int) -> bool:
+        session = self._session
+        
+        stmt = (
+            update(models.Department)
+            .where(models.Department.id == department_id)
+            .values(name=department.name)
+        )
+        
+        session.execute(stmt)
+        session.commit()
+        
+        return True
     
     def delete(self, department_id: int) -> bool:
         session = self._session
@@ -222,8 +309,28 @@ class BookDecommisionRepo(RepoBase):
         
         return db_book_decommision
   
-    # def update(self):
-    #     pass
+    def read_all(self) -> list[models.BookDecommision]:
+        session = self._session
+        
+        stmt = select(models.BookDecommision)
+        
+        db_book_decommision_list = session.scalars(stmt).all()
+        
+        return db_book_decommision_list
+    
+    def update(self, book_decommision: schemas.BookDecommisionCreate, book_decommision_id: int) -> bool:
+        session = self._session
+        
+        stmt = (
+            update(models.BookDecommision)
+            .where(models.BookDecommision.id == book_decommision_id)
+            .values(books_total=book_decommision.books_total)
+        )
+        
+        session.execute(stmt)
+        session.commit()
+        
+        return True
     
     def delete(self, book_decommision_id: int) -> bool:
         session = self._session
@@ -264,8 +371,35 @@ class StudentRepo(RepoBase):
         
         return db_student
   
-    # def update(self):
-    #     pass
+    def read_all(self) -> list[models.Student]:
+        session = self._session
+        
+        stmt = select(models.Student)
+        
+        db_student_list = session.scalars(stmt).all()
+        
+        return db_student_list
+    
+    def update(self, student: schemas.StudentCreate, student_id: int) -> bool:
+        session = self._session
+        
+        hashed_password = get_hashed_password(student.password)
+        
+        stmt = (
+            update(models.Student)
+            .where(models.Student.id == student_id)
+            .values(
+                first_name=student.first_name,
+                last_name=student.last_name,
+                login=student.login,
+                hashed_password=hashed_password
+            )
+        )
+        
+        session.execute(stmt)
+        session.commit()
+        
+        return True
     
     def delete(self, student_id: int) -> bool:
         session = self._session
@@ -300,8 +434,28 @@ class BookStateRepo(RepoBase):
         
         return db_book_state
   
-    # def update(self):
-    #     pass
+    def read_all(self) -> list[models.BookState]:
+        session = self._session
+        
+        stmt = select(models.BookState)
+        
+        db_book_state_list = session.scalars(stmt).all()
+        
+        return db_book_state_list
+    
+    def update(self, book_state: schemas.BookStateCreate, book_state_id: int) -> bool:
+        session = self._session
+            
+        stmt = (
+            update(models.BookState)
+            .where(models.BookState.id == book_state_id)
+            .values(name=book_state.name)
+        )
+        
+        session.execute(stmt)
+        session.commit()
+        
+        return True
     
     def delete(self, book_state_id: int) -> bool:
         session = self._session

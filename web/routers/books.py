@@ -16,8 +16,8 @@ def create(book: BookCreate, book_repo: Session = Depends(get_book_repo)):
 
 
 @router.get("/{book_id}", response_model=Book, status_code=200)
-def read(book_id: int, book_repo: Session = Depends(get_book_repo)):
-    db_book = book_repo.read(book_id)
+def read_by_id(book_id: int, book_repo: Session = Depends(get_book_repo)):
+    db_book = book_repo.read_by_id(book_id)
     
     if not db_book:
         raise HTTPException(status_code=404, detail="Book not found")
@@ -26,8 +26,8 @@ def read(book_id: int, book_repo: Session = Depends(get_book_repo)):
 
 
 @router.get("/", response_model=list[Book | None], status_code=200)
-def read_all(book_repo: Session = Depends(get_book_repo)):
-    db_book_decommision_list = book_repo.read_all()
+def read(book_repo: Session = Depends(get_book_repo)):
+    db_book_decommision_list = book_repo.read()
     
     return db_book_decommision_list
 

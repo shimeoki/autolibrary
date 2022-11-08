@@ -16,8 +16,8 @@ def create(student: StudentCreate, student_repo: Session = Depends(get_student_r
 
 
 @router.get("/{student_id}", response_model=Student, status_code=200)
-def read(student_id: int, student_repo: Session = Depends(get_student_repo)):
-    db_student = student_repo.read(student_id)
+def read_by_id(student_id: int, student_repo: Session = Depends(get_student_repo)):
+    db_student = student_repo.read_by_id(student_id)
     
     if not db_student:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -26,8 +26,12 @@ def read(student_id: int, student_repo: Session = Depends(get_student_repo)):
 
 
 @router.get("/", response_model=list[Student | None], status_code=200)
-def read_all(student_repo: Session = Depends(get_student_repo)):
-    db_book_decommision_list = student_repo.read_all()
+def read(first_name: str | None = None,
+         last_name: str | None = None,
+         login: str | None = None,
+         student_repo: Session = Depends(get_student_repo)
+):
+    db_book_decommision_list = student_repo.read(first_name=first_name, last_name=last_name, login=login)
     
     return db_book_decommision_list
 

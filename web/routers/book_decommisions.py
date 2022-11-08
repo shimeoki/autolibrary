@@ -16,8 +16,8 @@ def create(book_decommision: BookDecommisionCreate, book_decommision_repo: Sessi
 
 
 @router.get("/{book_decommision_id}", response_model=BookDecommision, status_code=200)
-def read(book_decommision_id: int, book_decommision_repo: Session = Depends(get_book_decommision_repo)):
-    db_book_decommision = book_decommision_repo.read(book_decommision_id)
+def read_by_id(book_decommision_id: int, book_decommision_repo: Session = Depends(get_book_decommision_repo)):
+    db_book_decommision = book_decommision_repo.read_by_id(book_decommision_id)
     
     if not db_book_decommision:
         raise HTTPException(status_code=404, detail="Book Decommision not found")
@@ -26,8 +26,8 @@ def read(book_decommision_id: int, book_decommision_repo: Session = Depends(get_
 
 
 @router.get("/", response_model=list[BookDecommision | None], status_code=200)
-def read_all(book_decommision_repo: Session = Depends(get_book_decommision_repo)):
-    db_book_decommision_list = book_decommision_repo.read_all()
+def read(books_total: int | None = None, book_decommision_repo: Session = Depends(get_book_decommision_repo)):
+    db_book_decommision_list = book_decommision_repo.read(books_total)
     
     return db_book_decommision_list
 

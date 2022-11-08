@@ -16,8 +16,8 @@ def create(book_state: BookStateCreate, book_state_repo: Session = Depends(get_b
 
 
 @router.get("/{book_state_id}", response_model=BookState, status_code=200)
-def read(book_state_id: int, book_state_repo: Session = Depends(get_book_state_repo)):
-    db_book_state = book_state_repo.read(book_state_id)
+def read_by_id(book_state_id: int, book_state_repo: Session = Depends(get_book_state_repo)):
+    db_book_state = book_state_repo.read_by_id(book_state_id)
     
     if not db_book_state:
         raise HTTPException(status_code=404, detail="Book State not found")
@@ -26,8 +26,8 @@ def read(book_state_id: int, book_state_repo: Session = Depends(get_book_state_r
 
 
 @router.get("/", response_model=list[BookState | None], status_code=200)
-def read_all(book_state_repo: Session = Depends(get_book_state_repo)):
-    db_book_state_list = book_state_repo.read_all()
+def read(name: str | None = None, book_state_repo: Session = Depends(get_book_state_repo)):
+    db_book_state_list = book_state_repo.read(name)
     
     return db_book_state_list
 

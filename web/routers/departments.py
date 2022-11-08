@@ -16,8 +16,8 @@ def create(department: DepartmentCreate, department_repo: Session = Depends(get_
 
 
 @router.get("/{department_id}", response_model=Department, status_code=200)
-def read(department_id: int, department_repo: Session = Depends(get_department_repo)):
-    db_department = department_repo.read(department_id)
+def read_by_id(department_id: int, department_repo: Session = Depends(get_department_repo)):
+    db_department = department_repo.read_by_id(department_id)
     
     if not db_department:
         raise HTTPException(status_code=404, detail="Department not found")
@@ -26,8 +26,8 @@ def read(department_id: int, department_repo: Session = Depends(get_department_r
 
 
 @router.get("/", response_model=list[Department | None], status_code=200)
-def read_all(department_repo: Session = Depends(get_department_repo)):
-    db_department_list = department_repo.read_all()
+def read(name: str | None = None, department_repo: Session = Depends(get_department_repo)):
+    db_department_list = department_repo.read(name)
     
     return db_department_list
 

@@ -16,8 +16,8 @@ def create(publisher: PublisherCreate, publisher_repo: Session = Depends(get_pub
 
 
 @router.get("/{publisher_id}", response_model=Publisher, status_code=200)
-def read(publisher_id: int, publisher_repo: Session = Depends(get_publisher_repo)):
-    db_publisher = publisher_repo.read(publisher_id)
+def read_by_id(publisher_id: int, publisher_repo: Session = Depends(get_publisher_repo)):
+    db_publisher = publisher_repo.read_by_id(publisher_id)
     
     if not db_publisher:
         raise HTTPException(status_code=404, detail="Publisher not found")
@@ -26,8 +26,8 @@ def read(publisher_id: int, publisher_repo: Session = Depends(get_publisher_repo
 
 
 @router.get("/", response_model=list[Publisher | None], status_code=200)
-def read_all(publisher_repo: Session = Depends(get_publisher_repo)):
-    db_publisher_list = publisher_repo.read_all()
+def read(name: str | None = None, city: str | None = None, publisher_repo: Session = Depends(get_publisher_repo)):
+    db_publisher_list = publisher_repo.read(name=name, city=city)
     
     return db_publisher_list
 

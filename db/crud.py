@@ -22,14 +22,14 @@ class BookRepo(RepoBase):
         
         return db_book
     
-    def read(self, book_id: int) -> models.Book | None:
+    def read_by_id(self, book_id: int) -> models.Book | None:
         session = self._session
         
         db_book = session.get(models.Book, book_id)
         
         return db_book
   
-    def read_all(self) -> list[models.Book]:
+    def read(self) -> list[models.Book]:
         session = self._session
         
         stmt = select(models.Book)
@@ -78,17 +78,20 @@ class BookTypeRepo(RepoBase):
         
         return db_book_type
     
-    def read(self, book_type_id: int) -> models.BookType | None:
+    def read_by_id(self, book_type_id: int) -> models.BookType | None:
         session = self._session
         
         db_book_type = session.get(models.BookType, book_type_id)
         
         return db_book_type
   
-    def read_all(self) -> list[models.BookType]:
+    def read(self, name: str | None = None) -> list[models.BookType | None]:
         session = self._session
         
         stmt = select(models.BookType)
+        
+        if name:
+            stmt = stmt.where(models.BookType.name == name)
         
         db_book_type_list = session.scalars(stmt).all()
         
@@ -134,17 +137,20 @@ class BookGenreRepo(RepoBase):
         
         return db_book_genre
     
-    def read(self, book_genre_id: int) -> models.BookGenre | None:
+    def read_by_id(self, book_genre_id: int) -> models.BookGenre | None:
         session = self._session
         
         db_book_genre = session.get(models.BookGenre, book_genre_id)
         
         return db_book_genre 
   
-    def read_all(self) -> list[models.BookGenre]:
+    def read(self, name: str | None = None) -> list[models.BookGenre | None]:
         session = self._session
         
         stmt = select(models.BookGenre)
+        
+        if name:
+            stmt = stmt.where(models.BookGenre.name == name)
         
         db_book_genre_list = session.scalars(stmt).all()
         
@@ -190,17 +196,22 @@ class PublisherRepo(RepoBase):
         
         return db_publisher
     
-    def read(self, publisher_id: int) -> models.Publisher | None:
+    def read_by_id(self, publisher_id: int) -> models.Publisher | None:
         session = self._session
         
         db_publisher = session.get(models.Publisher, publisher_id)
         
         return db_publisher
   
-    def read_all(self) -> list[models.Publisher]:
+    def read(self, name: str | None = None, city: str | None = None) -> list[models.Publisher | None]:
         session = self._session
         
         stmt = select(models.Publisher)
+        
+        if name:
+            stmt = stmt.where(models.Publisher.name == name)
+        if city:
+            stmt = stmt.where(models.Publisher.city == city)
         
         db_publisher_list = session.scalars(stmt).all()
         
@@ -246,17 +257,20 @@ class DepartmentRepo(RepoBase):
         
         return db_department
     
-    def read(self, department_id: int) -> models.Department | None:
+    def read_by_id(self, department_id: int) -> models.Department | None:
         session = self._session
         
         db_department = session.get(models.Department, department_id)
         
         return db_department
   
-    def read_all(self) -> list[models.Department]:
+    def read(self, name: str | None = None) -> list[models.Department | None]:
         session = self._session
         
         stmt = select(models.Department)
+        
+        if name:
+            stmt = stmt.where(models.Department.name == name)
         
         db_department_list = session.scalars(stmt).all()
         
@@ -302,17 +316,20 @@ class BookDecommisionRepo(RepoBase):
         
         return db_book_decommision
     
-    def read(self, book_decommision_id: int) -> models.BookDecommision | None:
+    def read_by_id(self, book_decommision_id: int) -> models.BookDecommision | None:
         session = self._session
         
         db_book_decommision = session.get(models.BookDecommision, book_decommision_id)
         
         return db_book_decommision
   
-    def read_all(self) -> list[models.BookDecommision]:
+    def read(self, books_total: int | None = None) -> list[models.BookDecommision | None]:
         session = self._session
         
         stmt = select(models.BookDecommision)
+        
+        if books_total:
+            stmt = stmt.where(models.BookDecommision.books_total == books_total)
         
         db_book_decommision_list = session.scalars(stmt).all()
         
@@ -364,17 +381,29 @@ class StudentRepo(RepoBase):
         
         return db_student
     
-    def read(self, student_id: int) -> models.Student | None:
+    def read_by_id(self, student_id: int) -> models.Student | None:
         session = self._session
         
         db_student = session.get(models.Student, student_id)
         
         return db_student
   
-    def read_all(self) -> list[models.Student]:
+    def read(
+        self,
+        first_name: str | None = None,
+        last_name: str | None = None,
+        login: str | None = None
+    ) -> list[models.Student | None]:
         session = self._session
         
         stmt = select(models.Student)
+        
+        if first_name:
+            stmt = stmt.where(models.Student.first_name == first_name)
+        if last_name:
+            stmt = stmt.where(models.Student.last_name == last_name)
+        if login:
+            stmt = stmt.where(models.Student.login == login)
         
         db_student_list = session.scalars(stmt).all()
         
@@ -427,17 +456,20 @@ class BookStateRepo(RepoBase):
         
         return db_book_state
     
-    def read(self, book_state_id: int) -> models.BookState | None:
+    def read_by_id(self, book_state_id: int) -> models.BookState | None:
         session = self._session
         
         db_book_state = session.get(models.BookState, book_state_id)
         
         return db_book_state
   
-    def read_all(self) -> list[models.BookState]:
+    def read(self, name: str | None = None) -> list[models.BookState | None]:
         session = self._session
         
         stmt = select(models.BookState)
+        
+        if name:
+            stmt = stmt.where(models.BookState.name == name)
         
         db_book_state_list = session.scalars(stmt).all()
         

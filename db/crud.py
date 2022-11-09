@@ -22,6 +22,20 @@ class BookRepo(RepoBase):
         
         return db_book
     
+    def read_pending(self) -> list[models.Book | None]:
+        session = self._session
+        
+        stmt = (
+            select(models.Book)
+            .join(models.Book.state)
+            .where(models.BookState.name == "В обработке")
+        )
+    
+        db_book_list = session.scalars(stmt).all()
+        
+        return db_book_list
+    
+    
     def read_by_id(self, book_id: int) -> models.Book | None:
         session = self._session
         
@@ -29,7 +43,7 @@ class BookRepo(RepoBase):
         
         return db_book
   
-    def read(self) -> list[models.Book]:
+    def read(self) -> list[models.Book | None]:
         session = self._session
         
         stmt = select(models.Book)
@@ -37,20 +51,22 @@ class BookRepo(RepoBase):
         db_book_list = session.scalars(stmt).all()
         
         return db_book_list
- 
-    def update(self, book: schemas.BookCreate, book_id: int) -> bool:
+    
+    
+    def patch(self, book: schemas.BookPatch, book_id: int) -> bool:
         session = self._session
         
         stmt = (
             update(models.Book)
             .where(models.Book.id == book_id)
-            .values(name=book.name)
+            .values(book.dict())
         )
-        
+    
         session.execute(stmt)
         session.commit()
         
         return True
+    
     
     def delete(self, book_id: int) -> bool:
         session = self._session
@@ -103,7 +119,7 @@ class BookTypeRepo(RepoBase):
         stmt = (
             update(models.BookType)
             .where(models.BookType.id == book_type_id)
-            .values(name=book_type.name)
+            .values(book_type.dict())
         )
         
         session.execute(stmt)
@@ -162,7 +178,7 @@ class BookGenreRepo(RepoBase):
         stmt = (
             update(models.BookGenre)
             .where(models.BookGenre.id == book_genre_id)
-            .values(name=book_genre.name)
+            .values(book_genre.dict())
         )
         
         session.execute(stmt)
@@ -223,7 +239,7 @@ class PublisherRepo(RepoBase):
         stmt = (
             update(models.Publisher)
             .where(models.Publisher.id == publisher_id)
-            .values(name=publisher.name, city=publisher.city)
+            .values(publisher.dict())
         )
         
         session.execute(stmt)
@@ -282,7 +298,7 @@ class DepartmentRepo(RepoBase):
         stmt = (
             update(models.Department)
             .where(models.Department.id == department_id)
-            .values(name=department.name)
+            .values(department.dict())
         )
         
         session.execute(stmt)
@@ -481,7 +497,7 @@ class BookStateRepo(RepoBase):
         stmt = (
             update(models.BookState)
             .where(models.BookState.id == book_state_id)
-            .values(name=book_state.name)
+            .values(book_state.dict())
         )
         
         session.execute(stmt)

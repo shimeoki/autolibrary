@@ -31,9 +31,9 @@ def read(first_name: str | None = None,
          login: str | None = None,
          student_repo: Session = Depends(get_student_repo)
 ):
-    db_book_decommision_list = student_repo.read(first_name=first_name, last_name=last_name, login=login)
+    db_student_list = student_repo.read(first_name=first_name, last_name=last_name, login=login)
     
-    return db_book_decommision_list
+    return db_student_list
 
 
 @router.put("/{student_id}", status_code=200)

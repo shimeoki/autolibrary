@@ -27,6 +27,12 @@ class BookCreate(BookBase):
     decommision_id: int | None = None
     student_id: int | None = None
     state_id: int
+    
+    
+class BookPatch(BaseModel):
+    state_id: int
+    receive_date: date
+    return_date: date
 
 
 class Book(BookBase):

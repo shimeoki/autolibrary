@@ -1,65 +1,137 @@
 from sqlalchemy import update, select
 from sqlalchemy.orm import Session
+from pydantic import BaseModel as Schema
 
-from db import models, schemas
+from db.models import (
+    Base as Model, 
+    Book, 
+    BookType, 
+    BookGenre, 
+    Publisher, 
+    Department, 
+    BookDecommision, 
+    Student, 
+    BookState
+)
+from db.schemas import (
+    BookCreate, 
+    BookPatch, 
+    BookTypeCreate, 
+    BookGenreCreate, 
+    PublisherCreate, 
+    DepartmentCreate, 
+    BookDecommisionCreate, 
+    StudentCreate, 
+    BookStateCreate
+)
 from db.password import get_hashed_password
 
 
 class RepoBase:
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, model: Model):
         self._session = session
+        self._model = model
+
+    def create(self, item: Schema) -> Model:
+        session = self._session
+        
+        db_item = self._model(**item.dict())
+        
+        session.add(db_item)
+        session.commit()
+        session.refresh(db_item)
+        
+        return db_item
+    
+    def read_by_id(self, item_id: int) -> Model | None:
+        session = self._session
+        
+        db_item = session.get(self._model, item_id)
+        
+        return db_item
+        
+    def update(self, item: Schema, item_id: int) -> bool:
+        session = self._session
+
+        db_item = self.read_by_id(item_id)
+        
+        if not db_item:
+            return False
+
+        stmt = (
+            update(self._model)
+            .where(self._model.id == item_id)
+            .values(item.dict())
+        )
+        
+        session.execute(stmt)
+        session.commit()
+        
+        return True
+        
+    def delete(self, item_id: int) -> bool:
+        session = self._session
+        
+        db_item = self.read_by_id(item_id)
+        
+        if not db_item:
+            return False
+        
+        session.delete(db_item)
+        session.commit()
+        
+        return True
 
 
 class BookRepo(RepoBase):
-    def create(self, book: schemas.BookCreate) -> models.Book:
-        session = self._session
-        
-        db_book = models.Book(**book.dict())
-        
-        session.add(db_book)
-        session.commit()
-        session.refresh(db_book)
-        
-        return db_book
+    def __init__(self, session: Session):
+        super().__init__(session=session, model=Book)
     
-    def read_pending(self) -> list[models.Book | None]:
+    def create(self, item: BookCreate) -> Book:
+        book = super().create(item=item)
+        
+        return book
+    
+    def read_pending(self) -> list[Book | None]:
         session = self._session
         
         stmt = (
-            select(models.Book)
-            .join(models.Book.state)
-            .where(models.BookState.name == "В обработке")
+            select(Book)
+            .join(Book.state)
+            .where(BookState.name == "В обработке")
         )
     
-        db_book_list = session.scalars(stmt).all()
+        books = session.scalars(stmt).all()
         
-        return db_book_list
+        return books
     
-    
-    def read_by_id(self, book_id: int) -> models.Book | None:
-        session = self._session
+    def read_by_id(self, item_id: int) -> Book | None:
+        book = super().read_by_id(item_id=item_id)
         
-        db_book = session.get(models.Book, book_id)
-        
-        return db_book
+        return book
   
-    def read(self) -> list[models.Book | None]:
+    def read(self) -> list[Book | None]:
         session = self._session
         
-        stmt = select(models.Book)
+        stmt = select(Book)
         
-        db_book_list = session.scalars(stmt).all()
+        books = session.scalars(stmt).all()
         
-        return db_book_list
+        return books
     
     
-    def patch(self, book: schemas.BookPatch, book_id: int) -> bool:
+    def patch(self, item: BookPatch, item_id: int) -> bool:
         session = self._session
+        
+        db_item = self.read_by_id(item_id)
+        
+        if not db_item:
+            return False
         
         stmt = (
-            update(models.Book)
-            .where(models.Book.id == book_id)
-            .values(book.dict())
+            update(Book)
+            .where(Book.id == item_id)
+            .values(item.dict())
         )
     
         session.execute(stmt)
@@ -67,376 +139,267 @@ class BookRepo(RepoBase):
         
         return True
     
+    def update(self):
+        pass
     
-    def delete(self, book_id: int) -> bool:
-        session = self._session
+    def delete(self, item_id: int) -> bool:
+        response = super().delete(item_id=item_id)
         
-        db_book = self.read(book_id)
-        
-        if not db_book:
-            return False
-        
-        session.delete(db_book)
-        session.commit()
-        
-        return True
+        return response
         
 
 class BookTypeRepo(RepoBase):
-    def create(self, book_type: schemas.BookTypeCreate) -> models.BookType:
-        session = self._session
-        
-        db_book_type = models.BookType(**book_type.dict())
-        
-        session.add(db_book_type)
-        session.commit()
-        session.refresh(db_book_type)
-        
-        return db_book_type
+    def __init__(self, session: Session):
+        super().__init__(session=session, model=BookType)
     
-    def read_by_id(self, book_type_id: int) -> models.BookType | None:
-        session = self._session
+    def create(self, item: BookTypeCreate) -> BookType:
+        book_type = super().create(item=item)
         
-        db_book_type = session.get(models.BookType, book_type_id)
+        return book_type
+    
+    def read_by_id(self, item_id: int) -> BookType | None:
+        book_type = super().read_by_id(item_id=item_id)
         
-        return db_book_type
+        return book_type
   
-    def read(self, name: str | None = None) -> list[models.BookType | None]:
+    def read(self, name: str | None = None) -> list[BookType | None]:
         session = self._session
         
-        stmt = select(models.BookType)
+        stmt = select(BookType)
         
         if name:
-            stmt = stmt.where(models.BookType.name == name)
+            stmt = stmt.where(BookType.name == name)
         
-        db_book_type_list = session.scalars(stmt).all()
+        book_types = session.scalars(stmt).all()
         
-        return db_book_type_list
+        return book_types
 
-    def update(self, book_type: schemas.BookTypeCreate, book_type_id: int) -> bool:
-        session = self._session
+    def update(self, item: BookTypeCreate, item_id: int) -> bool:
+        response = super().update(item=item, item_id=item_id)
         
-        stmt = (
-            update(models.BookType)
-            .where(models.BookType.id == book_type_id)
-            .values(book_type.dict())
-        )
-        
-        session.execute(stmt)
-        session.commit()
-        
-        return True
+        return response
     
-    def delete(self, book_type_id: int) -> bool:
-        session = self._session
+    def delete(self, item_id: int) -> bool:
+        response = super().delete(item_id=item_id)
         
-        db_book_type = self.read(book_type_id)
-        
-        if not db_book_type:
-            return False
-        
-        session.delete(db_book_type)
-        session.commit()
-        
-        return True
-     
-       
+        return response
+
+
 class BookGenreRepo(RepoBase):
-    def create(self, book_genre: schemas.BookGenreCreate) -> models.BookGenre:
-        session = self._session
-        
-        db_book_genre = models.BookGenre(**book_genre.dict())
-        
-        session.add(db_book_genre)
-        session.commit()
-        session.refresh(db_book_genre)
-        
-        return db_book_genre
+    def __init__(self, session: Session):
+        super().__init__(session=session, model=BookGenre)
     
-    def read_by_id(self, book_genre_id: int) -> models.BookGenre | None:
-        session = self._session
+    def create(self, item: BookGenreCreate) -> BookGenre:
+        book_genre = super().create(item=item)
         
-        db_book_genre = session.get(models.BookGenre, book_genre_id)
+        return book_genre
+    
+    def read_by_id(self, item_id: int) -> BookGenre | None:
+        book_genre = super().read_by_id(item_id=item_id)
         
-        return db_book_genre 
+        return book_genre
   
-    def read(self, name: str | None = None) -> list[models.BookGenre | None]:
+    def read(self, name: str | None = None) -> list[BookGenre | None]:
         session = self._session
         
-        stmt = select(models.BookGenre)
+        stmt = select(BookGenre)
         
         if name:
-            stmt = stmt.where(models.BookGenre.name == name)
+            stmt = stmt.where(BookGenre.name == name)
         
-        db_book_genre_list = session.scalars(stmt).all()
+        book_genres = session.scalars(stmt).all()
         
-        return db_book_genre_list
-    
-    def update(self, book_genre: schemas.BookGenreCreate, book_genre_id: int) -> bool:
-        session = self._session
-        
-        stmt = (
-            update(models.BookGenre)
-            .where(models.BookGenre.id == book_genre_id)
-            .values(book_genre.dict())
-        )
-        
-        session.execute(stmt)
-        session.commit()
-        
-        return True
-    
-    def delete(self, book_genre_id: int) -> bool:
-        session = self._session
-        
-        db_book_genre = self.read(book_genre_id)
+        return book_genres
 
-        if not db_book_genre:
-            return False
+    def update(self, item: BookGenreCreate, item_id: int) -> bool:
+        response = super().update(item=item, item_id=item_id)
+        
+        return response
+    
+    def delete(self, item_id: int) -> bool:
+        response = super().delete(item_id=item_id)
+        
+        return response
 
-        session.delete(db_book_genre)
-        session.commit()
-        
-        return True
-        
 
 class PublisherRepo(RepoBase):
-    def create(self, publisher: schemas.PublisherCreate) -> models.Publisher:
-        session = self._session
-        
-        db_publisher = models.Publisher(**publisher.dict())
-        
-        session.add(db_publisher)
-        session.commit()
-        session.refresh(db_publisher)
-        
-        return db_publisher
+    def __init__(self, session: Session):
+        super().__init__(session=session, model=Publisher)
     
-    def read_by_id(self, publisher_id: int) -> models.Publisher | None:
-        session = self._session
+    def create(self, item: PublisherCreate) -> Publisher:
+        publisher = super().create(item=item)
         
-        db_publisher = session.get(models.Publisher, publisher_id)
+        return publisher
+    
+    def read_by_id(self, item_id: int) -> Publisher | None:
+        publisher = super().read_by_id(item_id=item_id)
         
-        return db_publisher
+        return publisher
   
-    def read(self, name: str | None = None, city: str | None = None) -> list[models.Publisher | None]:
+    def read(self, name: str | None = None, city: str | None = None) -> list[Publisher | None]:
         session = self._session
         
-        stmt = select(models.Publisher)
+        stmt = select(Publisher)
         
         if name:
-            stmt = stmt.where(models.Publisher.name == name)
+            stmt = stmt.where(Publisher.name == name)
         if city:
-            stmt = stmt.where(models.Publisher.city == city)
+            stmt = stmt.where(Publisher.city == city)
         
-        db_publisher_list = session.scalars(stmt).all()
+        publishers = session.scalars(stmt).all()
         
-        return db_publisher_list
-    
-    def update(self, publisher: schemas.PublisherCreate, publisher_id: int) -> bool:
-        session = self._session
-        
-        stmt = (
-            update(models.Publisher)
-            .where(models.Publisher.id == publisher_id)
-            .values(publisher.dict())
-        )
-        
-        session.execute(stmt)
-        session.commit()
-        
-        return True
-    
-    def delete(self, publisher_id: int) -> bool:
-        session = self._session
-        
-        db_publisher = self.read(publisher_id)
+        return publishers
 
-        if not db_publisher:
-            return False
-
-        session.delete(db_publisher)
-        session.commit()
+    def update(self, item: PublisherCreate, item_id: int) -> bool:
+        response = super().update(item=item, item_id=item_id)
         
-        return True
+        return response
+    
+    def delete(self, item_id: int) -> bool:
+        response = super().delete(item_id=item_id)
+        
+        return response
         
         
 class DepartmentRepo(RepoBase):
-    def create(self, department: schemas.DepartmentCreate) -> models.Department:
-        session = self._session
-        
-        db_department = models.Department(**department.dict())
-        
-        session.add(db_department)
-        session.commit()
-        session.refresh(db_department)
-        
-        return db_department
+    def __init__(self, session: Session):
+        super().__init__(session=session, model=Department)
     
-    def read_by_id(self, department_id: int) -> models.Department | None:
-        session = self._session
+    def create(self, item: DepartmentCreate) -> Department:
+        department = super().create(item=item)
         
-        db_department = session.get(models.Department, department_id)
+        return department
+    
+    def read_by_id(self, item_id: int) -> Department | None:
+        department = super().read_by_id(item_id=item_id)
         
-        return db_department
+        return department
   
-    def read(self, name: str | None = None) -> list[models.Department | None]:
+    def read(self, name: str | None = None) -> list[Department | None]:
         session = self._session
         
-        stmt = select(models.Department)
+        stmt = select(Department)
         
         if name:
-            stmt = stmt.where(models.Department.name == name)
+            stmt = stmt.where(Department.name == name)
         
-        db_department_list = session.scalars(stmt).all()
+        departments = session.scalars(stmt).all()
         
-        return db_department_list
-    
-    def update(self, department: schemas.DepartmentCreate, department_id: int) -> bool:
-        session = self._session
-        
-        stmt = (
-            update(models.Department)
-            .where(models.Department.id == department_id)
-            .values(department.dict())
-        )
-        
-        session.execute(stmt)
-        session.commit()
-        
-        return True
-    
-    def delete(self, department_id: int) -> bool:
-        session = self._session
-        
-        db_department = self.read(department_id)
-        
-        if not db_department:
-            return False
-        
-        session.delete(db_department)
-        session.commit()
-        
-        return True
-        
+        return departments
 
-class BookDecommisionRepo(RepoBase):
-    def create(self, book_decommision: schemas.BookDecommisionCreate) -> models.BookDecommision:
-        session = self._session
+    def update(self, item: DepartmentCreate, item_id: int) -> bool:
+        response = super().update(item=item, item_id=item_id)
         
-        db_book_decommision = models.BookDecommision(**book_decommision.dict())
-        
-        session.add(db_book_decommision)
-        session.commit()
-        session.refresh(db_book_decommision)
-        
-        return db_book_decommision
+        return response
     
-    def read_by_id(self, book_decommision_id: int) -> models.BookDecommision | None:
-        session = self._session
+    def delete(self, item_id: int) -> bool:
+        response = super().delete(item_id=item_id)
         
-        db_book_decommision = session.get(models.BookDecommision, book_decommision_id)
+        return response       
         
-        return db_book_decommision
+        
+class BookDecommisionRepo(RepoBase):
+    def __init__(self, session: Session):
+        super().__init__(session=session, model=BookDecommision)
+    
+    def create(self, item: BookDecommisionCreate) -> BookDecommision:
+        book_decommision = super().create(item=item)
+        
+        return book_decommision
+    
+    def read_by_id(self, item_id: int) -> BookDecommision | None:
+        book_decommision = super().read_by_id(item_id=item_id)
+        
+        return book_decommision
   
-    def read(self, books_total: int | None = None) -> list[models.BookDecommision | None]:
+    def read(self, books_total: int | None = None) -> list[BookDecommision | None]:
         session = self._session
         
-        stmt = select(models.BookDecommision)
+        stmt = select(BookDecommision)
         
         if books_total:
-            stmt = stmt.where(models.BookDecommision.books_total == books_total)
+            stmt = stmt.where(BookDecommision.books_total == books_total)
         
-        db_book_decommision_list = session.scalars(stmt).all()
+        book_decommisions = session.scalars(stmt).all()
         
-        return db_book_decommision_list
-    
-    def update(self, book_decommision: schemas.BookDecommisionCreate, book_decommision_id: int) -> bool:
-        session = self._session
-        
-        stmt = (
-            update(models.BookDecommision)
-            .where(models.BookDecommision.id == book_decommision_id)
-            .values(books_total=book_decommision.books_total)
-        )
-        
-        session.execute(stmt)
-        session.commit()
-        
-        return True
-    
-    def delete(self, book_decommision_id: int) -> bool:
-        session = self._session
-        
-        db_book_decommision = self.read(book_decommision_id)
-        
-        if not db_book_decommision:
-            return False
+        return book_decommisions
 
-        session.delete(db_book_decommision)
-        session.commit()
+    def update(self, item: BookDecommisionCreate, item_id: int) -> bool:
+        response = super().update(item=item, item_id=item_id)
         
-        return True
+        return response
+    
+    def delete(self, item_id: int) -> bool:
+        response = super().delete(item_id=item_id)
         
-class StudentRepo(RepoBase):    
-    def create(self, student: schemas.StudentCreate) -> models.Student:
+        return response
+        
+
+class StudentRepo(RepoBase):
+    def __init__(self, session: Session):
+        super().__init__(session=session, model=Student)
+    
+    def create(self, item: StudentCreate) -> Student:
         session = self._session
         
-        hashed_password = get_hashed_password(student.password)
+        hashed_password = get_hashed_password(item.password)
         
-        db_student = models.Student(
-            first_name=student.first_name,
-            last_name=student.last_name,
-            login=student.login,
+        student = Student(
+            first_name=item.first_name,
+            last_name=item.last_name,
+            login=item.login,
             hashed_password=hashed_password
         )
         
-        session.add(db_student)
+        session.add(student)
         session.commit()
-        session.refresh(db_student)
+        session.refresh(student)
         
-        return db_student
+        return student
     
-    def read_by_id(self, student_id: int) -> models.Student | None:
-        session = self._session
+    def read_by_id(self, item_id: int) -> Student | None:
+        student = super().read_by_id(item_id=item_id)
         
-        db_student = session.get(models.Student, student_id)
-        
-        return db_student
+        return student
   
     def read(
-        self,
-        first_name: str | None = None,
-        last_name: str | None = None,
+        self, 
+        first_name: str | None = None, 
+        last_name: str | None = None, 
         login: str | None = None
-    ) -> list[models.Student | None]:
+    ) -> list[Student | None]:
         session = self._session
         
-        stmt = select(models.Student)
+        stmt = select(Student)
         
         if first_name:
-            stmt = stmt.where(models.Student.first_name == first_name)
+            stmt = stmt.where(Student.first_name == first_name)
         if last_name:
-            stmt = stmt.where(models.Student.last_name == last_name)
+            stmt = stmt.where(Student.last_name == last_name)
         if login:
-            stmt = stmt.where(models.Student.login == login)
+            stmt = stmt.where(Student.login == login)
         
-        db_student_list = session.scalars(stmt).all()
+        students = session.scalars(stmt).all()
         
-        return db_student_list
-    
-    def update(self, student: schemas.StudentCreate, student_id: int) -> bool:
+        return students
+
+    def update(self, item: StudentCreate, item_id: int) -> bool:
         session = self._session
         
-        hashed_password = get_hashed_password(student.password)
+        student = self.read_by_id(item_id)
+        
+        if not student:
+            return False
+        
+        hashed_password = get_hashed_password(item.password)
         
         stmt = (
-            update(models.Student)
-            .where(models.Student.id == student_id)
+            update(Student)
+            .where(Student.id == item_id)
             .values(
-                first_name=student.first_name,
-                last_name=student.last_name,
-                login=student.login,
+                first_name=item.first_name,
+                last_name=item.last_name,
+                login=item.login,
                 hashed_password=hashed_password
             )
         )
@@ -446,74 +409,44 @@ class StudentRepo(RepoBase):
         
         return True
     
-    def delete(self, student_id: int) -> bool:
-        session = self._session
+    def delete(self, item_id: int) -> bool:
+        response = super().delete(item_id=item_id)
         
-        db_student = self.read(student_id)
-        
-        if not db_student:
-            return False
-        
-        session.delete(db_student)
-        session.commit()
-        
-        return True
-        
+        return response
+
 
 class BookStateRepo(RepoBase):
-    def create(self, book_state: schemas.BookStateCreate) -> models.BookState:
-        session = self._session
-        
-        db_book_state = models.BookState(**book_state.dict())
-        
-        session.add(db_book_state)
-        session.commit()
-        session.refresh(db_book_state)
-        
-        return db_book_state
+    def __init__(self, session: Session):
+        super().__init__(session=session, model=BookState)
     
-    def read_by_id(self, book_state_id: int) -> models.BookState | None:
-        session = self._session
+    def create(self, item: BookStateCreate) -> BookState:
+        book_state = super().create(item=item)
         
-        db_book_state = session.get(models.BookState, book_state_id)
+        return book_state
+    
+    def read_by_id(self, item_id: int) -> BookState | None:
+        book_state = super().read_by_id(item_id=item_id)
         
-        return db_book_state
+        return book_state
   
-    def read(self, name: str | None = None) -> list[models.BookState | None]:
+    def read(self, name: str | None = None) -> list[BookState | None]:
         session = self._session
         
-        stmt = select(models.BookState)
+        stmt = select(BookState)
         
         if name:
-            stmt = stmt.where(models.BookState.name == name)
+            stmt = stmt.where(BookState.name == name)
         
-        db_book_state_list = session.scalars(stmt).all()
+        book_states = session.scalars(stmt).all()
         
-        return db_book_state_list
+        return book_states
+
+    def update(self, item: BookStateCreate, item_id: int) -> bool:
+        response = super().update(item=item, item_id=item_id)
+        
+        return response
     
-    def update(self, book_state: schemas.BookStateCreate, book_state_id: int) -> bool:
-        session = self._session
-            
-        stmt = (
-            update(models.BookState)
-            .where(models.BookState.id == book_state_id)
-            .values(book_state.dict())
-        )
+    def delete(self, item_id: int) -> bool:
+        response = super().delete(item_id=item_id)
         
-        session.execute(stmt)
-        session.commit()
-        
-        return True
-    
-    def delete(self, book_state_id: int) -> bool:
-        session = self._session
-        
-        db_book_state = self.read(book_state_id)
-        
-        if not db_book_state:
-            return False
-        
-        session.delete(db_book_state)
-        session.commit()
-        
-        return True
+        return response

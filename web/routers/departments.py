@@ -9,41 +9,44 @@ router = APIRouter()
 
 
 @router.post("/", response_model=Department, status_code=201)
-def create(department: DepartmentCreate, department_repo: Session = Depends(get_department_repo)):
-    db_department = department_repo.create(department)
+def create(item: DepartmentCreate, item_repo: Session = Depends(get_department_repo)):
+    department = item_repo.create(item)
     
-    return db_department
+    return department
 
 
-@router.get("/{department_id}", response_model=Department, status_code=200)
-def read_by_id(department_id: int, department_repo: Session = Depends(get_department_repo)):
-    db_department = department_repo.read_by_id(department_id)
+@router.get("/{item_id}", response_model=Department, status_code=200)
+def read_by_id(item_id: int, item_repo: Session = Depends(get_department_repo)):
+    department = item_repo.read_by_id(item_id)
     
-    if not db_department:
-        raise HTTPException(status_code=404, detail="Department not found")
+    if not department:
+        raise HTTPException(status_code=404, detail="Item not found")
     
-    return db_department
+    return department
 
 
 @router.get("/", response_model=list[Department | None], status_code=200)
-def read(name: str | None = None, department_repo: Session = Depends(get_department_repo)):
-    db_department_list = department_repo.read(name)
+def read(name: str | None = None, item_repo: Session = Depends(get_department_repo)):
+    departments = item_repo.read(name=name)
     
-    return db_department_list
+    return departments
 
 
-@router.put("/{department_id}", status_code=200)
-def update(department: DepartmentCreate, department_id: int, department_repo: Session = Depends(get_department_repo)):
-    department_repo.update(department=department, department_id=department_id)
+@router.put("/{item_id}", status_code=204)
+def update(item: DepartmentCreate, item_id: int, item_repo: Session = Depends(get_department_repo)):
+    response = item_repo.update(item=item, item_id=item_id)
 
-    return {"status code": 200}
+    if response:
+        return
+    else:
+        raise HTTPException(status_code=404, detail="Item not found")
 
 
-@router.delete("/{department_id}", status_code=200)
-def delete(department_id: int, department_repo: Session = Depends(get_department_repo)):
-    db_response = department_repo.delete(department_id)
+@router.delete("/{item_id}", status_code=204)
+def delete(item_id: int, item_repo: Session = Depends(get_department_repo)):
+    response = item_repo.delete(item_id)
     
-    if not db_response:
-        raise HTTPException(status_code=404, detail="Department not found")
-    
-    return {"status code": 200}
+    if response:
+        return
+    else: 
+        raise HTTPException(status_code=404, detail="Item not found")

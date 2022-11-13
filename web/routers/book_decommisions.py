@@ -9,41 +9,44 @@ router = APIRouter()
 
 
 @router.post("/", response_model=BookDecommision, status_code=201)
-def create(book_decommision: BookDecommisionCreate, book_decommision_repo: Session = Depends(get_book_decommision_repo)):
-    db_book_decommision = book_decommision_repo.create(book_decommision)
+def create(item: BookDecommisionCreate, item_repo: Session = Depends(get_book_decommision_repo)):
+    book_decommision = item_repo.create(item)
     
-    return db_book_decommision
+    return book_decommision
 
 
-@router.get("/{book_decommision_id}", response_model=BookDecommision, status_code=200)
-def read_by_id(book_decommision_id: int, book_decommision_repo: Session = Depends(get_book_decommision_repo)):
-    db_book_decommision = book_decommision_repo.read_by_id(book_decommision_id)
+@router.get("/{item_id}", response_model=BookDecommision, status_code=200)
+def read_by_id(item_id: int, item_repo: Session = Depends(get_book_decommision_repo)):
+    book_decommision = item_repo.read_by_id(item_id)
     
-    if not db_book_decommision:
-        raise HTTPException(status_code=404, detail="Book Decommision not found")
+    if not book_decommision:
+        raise HTTPException(status_code=404, detail="Item not found")
     
-    return db_book_decommision
+    return book_decommision
 
 
 @router.get("/", response_model=list[BookDecommision | None], status_code=200)
-def read(books_total: int | None = None, book_decommision_repo: Session = Depends(get_book_decommision_repo)):
-    db_book_decommision_list = book_decommision_repo.read(books_total)
+def read(books_total: int | None = None, item_repo: Session = Depends(get_book_decommision_repo)):
+    book_decommisions = item_repo.read(books_total=books_total)
     
-    return db_book_decommision_list
+    return book_decommisions
 
 
-@router.put("/{book_decommision_id}", status_code=200)
-def update(book_decommision: BookDecommisionCreate, book_decommision_id: int, book_decommision_repo: Session = Depends(get_book_decommision_repo)):
-    book_decommision_repo.update(book_decommision=book_decommision, book_decommision_id=book_decommision_id)
+@router.put("/{item_id}", status_code=204)
+def update(item: BookDecommisionCreate, item_id: int, item_repo: Session = Depends(get_book_decommision_repo)):
+    response = item_repo.update(item=item, item_id=item_id)
 
-    return {"status code": 200}
+    if response:
+        return
+    else:
+        raise HTTPException(status_code=404, detail="Item not found")
 
 
-@router.delete("/{book_decommision_id}", status_code=200)
-def delete(book_decommision_id: int, book_decommision_repo: Session = Depends(get_book_decommision_repo)):
-    db_response = book_decommision_repo.delete(book_decommision_id)
+@router.delete("/{item_id}", status_code=204)
+def delete(item_id: int, item_repo: Session = Depends(get_book_decommision_repo)):
+    response = item_repo.delete(item_id)
     
-    if not db_response:
-        raise HTTPException(status_code=404, detail="Book Decommision not found")
-    
-    return {"status code": 200}
+    if response:
+        return
+    else: 
+        raise HTTPException(status_code=404, detail="Item not found")

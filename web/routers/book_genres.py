@@ -9,41 +9,44 @@ router = APIRouter()
 
 
 @router.post("/", response_model=BookGenre, status_code=201)
-def create(book_genre: BookGenreCreate, book_genre_repo: Session = Depends(get_book_genre_repo)):
-    db_book_genre = book_genre_repo.create(book_genre)
+def create(item: BookGenreCreate, item_repo: Session = Depends(get_book_genre_repo)):
+    book_genre = item_repo.create(item)
     
-    return db_book_genre
+    return book_genre
 
 
-@router.get("/{book_genre_id}", response_model=BookGenre, status_code=200)
-def read_by_id(book_genre_id: int, book_genre_repo: Session = Depends(get_book_genre_repo)):
-    db_book_genre = book_genre_repo.read_by_id(book_genre_id)
+@router.get("/{item_id}", response_model=BookGenre, status_code=200)
+def read_by_id(item_id: int, item_repo: Session = Depends(get_book_genre_repo)):
+    book_genre = item_repo.read_by_id(item_id)
     
-    if not db_book_genre:
-        raise HTTPException(status_code=404, detail="Book Genre not found")
+    if not book_genre:
+        raise HTTPException(status_code=404, detail="Item not found")
     
-    return db_book_genre
+    return book_genre
 
 
 @router.get("/", response_model=list[BookGenre | None], status_code=200)
-def read(name: str | None = None, book_genre_repo: Session = Depends(get_book_genre_repo)):
-    db_book_genre_list = book_genre_repo.read(name)
+def read(name: str | None = None, item_repo: Session = Depends(get_book_genre_repo)):
+    book_genres = item_repo.read(name=name)
     
-    return db_book_genre_list
+    return book_genres
 
 
-@router.put("/{book_genre_id}", status_code=200)
-def update(book_genre: BookGenreCreate, book_genre_id: int, book_genre_repo: Session = Depends(get_book_genre_repo)):
-    book_genre_repo.update(book_genre=book_genre, book_genre_id=book_genre_id)
+@router.put("/{item_id}", status_code=204)
+def update(item: BookGenreCreate, item_id: int, item_repo: Session = Depends(get_book_genre_repo)):
+    response = item_repo.update(item=item, item_id=item_id)
 
-    return {"status code": 200}
+    if response:
+        return
+    else:
+        raise HTTPException(status_code=404, detail="Item not found")
 
 
-@router.delete("/{book_genre_id}", status_code=200)
-def delete(book_genre_id: int, book_genre_repo: Session = Depends(get_book_genre_repo)):
-    db_response = book_genre_repo.delete(book_genre_id)
+@router.delete("/{item_id}", status_code=204)
+def delete(item_id: int, item_repo: Session = Depends(get_book_genre_repo)):
+    response = item_repo.delete(item_id)
     
-    if not db_response:
-        raise HTTPException(status_code=404, detail="Book Genre not found")
-    
-    return {"status code": 200}
+    if response:
+        return
+    else: 
+        raise HTTPException(status_code=404, detail="Item not found")

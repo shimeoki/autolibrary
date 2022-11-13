@@ -9,41 +9,44 @@ router = APIRouter()
 
 
 @router.post("/", response_model=BookState, status_code=201)
-def create(book_state: BookStateCreate, book_state_repo: Session = Depends(get_book_state_repo)):
-    db_book_state = book_state_repo.create(book_state)
+def create(item: BookStateCreate, item_repo: Session = Depends(get_book_state_repo)):
+    book_state = item_repo.create(item)
     
-    return db_book_state
+    return book_state
 
 
-@router.get("/{book_state_id}", response_model=BookState, status_code=200)
-def read_by_id(book_state_id: int, book_state_repo: Session = Depends(get_book_state_repo)):
-    db_book_state = book_state_repo.read_by_id(book_state_id)
+@router.get("/{item_id}", response_model=BookState, status_code=200)
+def read_by_id(item_id: int, item_repo: Session = Depends(get_book_state_repo)):
+    book_state = item_repo.read_by_id(item_id)
     
-    if not db_book_state:
-        raise HTTPException(status_code=404, detail="Book State not found")
+    if not book_state:
+        raise HTTPException(status_code=404, detail="Item not found")
     
-    return db_book_state
+    return book_state
 
 
 @router.get("/", response_model=list[BookState | None], status_code=200)
-def read(name: str | None = None, book_state_repo: Session = Depends(get_book_state_repo)):
-    db_book_state_list = book_state_repo.read(name)
+def read(name: str | None = None, item_repo: Session = Depends(get_book_state_repo)):
+    book_states = item_repo.read(name=name)
     
-    return db_book_state_list
+    return book_states
 
 
-@router.put("/{book_state_id}", status_code=200)
-def update(book_state: BookStateCreate, book_state_id: int, book_state_repo: Session = Depends(get_book_state_repo)):
-    book_state_repo.update(book_state=book_state, book_state_id=book_state_id)
+@router.put("/{item_id}", status_code=204)
+def update(item: BookStateCreate, item_id: int, item_repo: Session = Depends(get_book_state_repo)):
+    response = item_repo.update(item=item, item_id=item_id)
 
-    return {"status code": 200}
+    if response:
+        return
+    else:
+        raise HTTPException(status_code=404, detail="Item not found")
 
 
-@router.delete("/{book_state_id}", status_code=200)
-def delete(book_state_id: int, book_state_repo: Session = Depends(get_book_state_repo)):
-    db_response = book_state_repo.delete(book_state_id)
+@router.delete("/{item_id}", status_code=204)
+def delete(item_id: int, item_repo: Session = Depends(get_book_state_repo)):
+    response = item_repo.delete(item_id)
     
-    if not db_response:
-        raise HTTPException(status_code=404, detail="Book State not found")
-    
-    return {"status code": 200}
+    if response:
+        return
+    else: 
+        raise HTTPException(status_code=404, detail="Item not found")

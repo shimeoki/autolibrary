@@ -1,11 +1,24 @@
-from sqlalchemy.orm import Session, Query
-from telegram import ReplyKeyboardMarkup
 from math import ceil
+from json import load
+
+from telegram import ReplyKeyboardMarkup
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
+from db.crud import StudentRepo
+from db.models import Student
+
+
+with open('D:/GitHub/.misc/tokens.json', 'r') as f:
+    db_token = load(f)["db-token"]
+
+engine = create_engine(db_token)
+
 
 class ItemPaginator:
     def __init__(
         self,
-        engine, 
         item_model,
         lines: int,
         columns: int
@@ -137,36 +150,6 @@ class ItemPaginator:
         self._current_page -= 1
 
 
-class ItemGetter:
-    def __init__(self, engine, item_model) -> None:
-        self._engine = engine
-        self._item_model = item_model
-        
-        self._query = self._get_query()
-    
-    def _get_query(self) -> Query:
-        with Session(self._engine) as session:
-            query = session.query(self._item_model)
-            return query
-        
-    def get_query_list(self) -> list:
-        return self._query.all()
-    
-    def get_item(self, attribute: str, value):
-        query = self._query
-        result = query.filter(self._item_model.__dict__[attribute] == value).one_or_none()
-        return result
-    
-    def get_new_id(self) -> int:
-        query = self._query.order_by(self._item_model.id).all()
-        
-        if not query:
-            return 1
-        
-        last_id = query[-1].id
-        return last_id + 1
-            
-
 class ReplyGenerator:
     def __init__(self):
         pass
@@ -181,3 +164,80 @@ class ReplyGenerator:
         ]
         
         return ReplyKeyboardMarkup(keyboard=keyboard)
+        
+    @staticmethod
+    def profile_markup() -> ReplyKeyboardMarkup:
+        keyboard = [
+            ["Поменять логин"],
+            ["Поменять пароль"],
+            ["Обратно в меню"]
+        ]
+    
+        return ReplyKeyboardMarkup(keyboard=keyboard)
+    
+
+def get_student(login: str) -> Student | None:
+    session = Session(engine)
+    repo = StudentRepo(session=session)
+    
+    student = repo.read(login=login)
+    
+    session.close()
+    
+    if not student:
+        return None
+    else:
+        return student[0]
+
+def change_db_login(student_id: int, new_login: str) -> None:
+    session = Session(engine)
+    repo = StudentRepo(session=session)
+    
+    repo.update_login(new_login=new_login, item_id=student_id)
+    
+    session.close()
+    
+def change_db_password(student_id: int, new_password: str) -> None:
+    session = Session(engine)
+    repo = StudentRepo(session=session)
+    
+    repo.update_password(new_password=new_password, item_id=student_id)
+    
+    session.close()
+
+def check(string: str) -> bool:
+    # проверка на длину
+    if not 2 <= len(string) <= 32:
+        return False
+    
+    # проверка на символы
+    alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMOPQRSTUVWXYZ01234567890_'
+    
+    for i in string:
+        if i not in alphabet:
+            return False
+    
+    # прошло проверку
+    return True
+
+def check_login(login: str) -> bool:
+    if not check(string=login):
+        return False
+    
+    # проверка на уникальность
+    session = Session(engine)
+    repo = StudentRepo(session=session)
+    
+    students = repo.read()
+    
+    for i in students:
+        if i.login == login:
+            return False
+    
+    session.close()
+    
+    # прошло проверку
+    return True
+
+def check_password(password: str) -> bool:
+    return check(string=password)

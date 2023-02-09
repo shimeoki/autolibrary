@@ -1,4 +1,3 @@
-from email.message import Message
 import logging
 from json import load
 
@@ -6,16 +5,19 @@ from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
-    CallbackQueryHandler,
+    #CallbackQueryHandler,
     ConversationHandler,
     filters
 )
 
 from bot.commands import (
-    START,
     LOGIN,
     PASSWORD,
+    MENU,
     SHOP,
+    PROFILE,
+    CHANGE_LOGIN,
+    CHANGE_PASSWORD,
     start,
     enter_login,
     enter_password,
@@ -25,8 +27,13 @@ from bot.commands import (
     show_inventory,
     show_profile,
     show_main_menu,
-    quit_profile
+    quit_profile,
+    change_login,
+    changing_login,
+    change_password,
+    changing_password
 )
+
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -44,23 +51,34 @@ def main() -> None:
     conversation_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
-            START: [
+            LOGIN: [
                 MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), enter_login)
             ],
-            LOGIN: [
+            PASSWORD: [
                 MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), enter_password)
             ],
-            PASSWORD: [
+            MENU: [
                 MessageHandler(filters.Regex("^Сделать заказ$"), show_shop),
                 MessageHandler(filters.Regex("^Корзина$"), show_basket),
                 MessageHandler(filters.Regex("^Активные книги$"), show_inventory),
                 MessageHandler(filters.Regex("^Личный кабинет$"), show_profile)
             ],
+            PROFILE: [
+                MessageHandler(filters.Regex("^Поменять логин$"), change_login),
+                MessageHandler(filters.Regex("^Поменять пароль$"), change_password),
+                MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu)
+            ],
+            CHANGE_LOGIN: [
+                MessageHandler(filters.TEXT & ~(filters.COMMAND), changing_login)
+            ],
+            CHANGE_PASSWORD: [
+              MessageHandler(filters.TEXT & ~(filters.COMMAND), changing_password)
+            ],
             SHOP: [
-                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), show_shop_item),
                 MessageHandler(filters.Regex("^<$"), show_shop),
                 MessageHandler(filters.Regex("^>$"), show_shop),
-                MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu)#,
+                MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu),
+                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), show_shop_item)#,
                 #CallbackQueryHandler()
             ]
         },

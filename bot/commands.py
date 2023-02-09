@@ -1,28 +1,23 @@
-from json import load
-
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from sqlalchemy import create_engine
-
 from db.models import (
-    Student,
     Book
 )
 
 from bot.utils import (
-    ItemGetter,
     ReplyGenerator,
-    ItemPaginator
+    ItemPaginator,
+    change_db_login,
+    change_db_password,
+    check_login,
+    check_password,
+    get_student
 )
 
+from db.password import verify_password
 
-with open('D:/GitHub/.misc/tokens.json', 'r') as f:
-    db_token = load(f)["db-token"]
-    
-engine = create_engine(db_token)
-
-START, LOGIN, PASSWORD, SHOP = range(4)
+LOGIN, PASSWORD, MENU, SHOP, PROFILE, CHANGE_LOGIN, CHANGE_PASSWORD = range(7)
 
 
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
@@ -33,46 +28,38 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     user_data["inventory"] = []
     user_data["basket"] = []    
     user_data["shop_paginator"] = ItemPaginator(
-        engine=engine,
         item_model=Book,
         lines=3,
         columns=3
     )
     
-    text = "Привет! Введи свой логин, чтобы продолжить."
-    
     await update.message.reply_text(
-        text=text
+        text="Привет! Введи свой логин, чтобы продолжить."
     )
     
-    return START
+    return LOGIN
 
 
 async def enter_login(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     user_data = ctx.user_data
     login = update.message.text
     
-    getter = ItemGetter(engine, Student)
-    student = getter.get_item("login", login)
+    student = get_student(login=login)
     
     if not student:
-        text = "Логин неверный, попробуйте ещё раз."
-        
         await update.message.reply_text(
-            text=text
+            text="Логин неверный, попробуйте ещё раз."
         )
 
-        return START
+        return LOGIN
 
     user_data["student"] = student
-
-    text = "Введите пароль."
     
     await update.message.reply_text(
-        text=text
+        text="Введите пароль."
     )
     
-    return LOGIN
+    return PASSWORD
 
 
 async def enter_password(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
@@ -81,11 +68,11 @@ async def enter_password(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     
     student = user_data["student"]
     
-    if student.password != password:
-        text = "Пароль неверный, попробуйте ещё раз."
-        
+    verify = verify_password(password, student.hashed_password)
+    
+    if not verify:
         await update.message.reply_text(
-            text=text
+            text="Пароль неверный, попробуйте ещё раз."
         )
 
         return LOGIN
@@ -95,11 +82,11 @@ async def enter_password(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     text = f"Добро пожаловать, {student.last_name} {student.first_name}!"
     
     await update.message.reply_text(
-        text=text,                                 # можно вместо меню сразу после пароля сделать кнопку "Войти",
-        reply_markup=ReplyGenerator.menu_markup()  # чтобы сохранить логику и поставить меню в отдельное состояние
+        text=text,
+        reply_markup=ReplyGenerator.menu_markup()
     )
     
-    return PASSWORD
+    return MENU
 
 
 async def show_shop(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
@@ -138,19 +125,93 @@ async def show_inventory(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def show_profile(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    # кнопки смены логина, пароля
-    # кнопка выхода
-    pass
+    await update.message.reply_text(
+        text="Выберите дальнейшее действие",  
+        reply_markup=ReplyGenerator.profile_markup()
+    )
+    
+    return PROFILE
+
+
+async def change_login(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    student = ctx.user_data["student"]
+    
+    await update.message.reply_text(
+        text=f"Введите новый логин. Требования:\n\n1. Логин должен быть уникальным.\n2. Буквы латинского алфавита, цифры и нижнее подчёркивание.\n3. От 2 до 32 символов.\n\nТекущий логин: {student.login}."
+    )
+    
+    return CHANGE_LOGIN
+
+
+async def changing_login(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    user_data = ctx.user_data
+    student = user_data["student"]
+    login = update.message.text
+    
+    if check_login(login=login):
+        change_db_login(student_id=student.id, new_login=login)
+        
+        student = get_student(login=login)
+        user_data["student"] = student
+        
+        await update.message.reply_text(
+            text=f"Успешно! Ваш логин - {login}.",
+            reply_markup=ReplyGenerator.profile_markup()
+        )
+        
+        return PROFILE
+    else:
+        await update.message.reply_text(
+            text="Логин не соответствует требованиям. Попробуйте ещё раз."
+        )
+        
+        return CHANGE_LOGIN
+
+
+async def change_password(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        text="Введите новый пароль. Требования:\n\n1. Буквы латинского алфавита и цифры.\n2. От 2 до 32 символов."
+    )
+    
+    return CHANGE_PASSWORD
+
+
+async def changing_password(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    user_data = ctx.user_data
+    student = user_data["student"]
+    login = student.login
+    password = update.message.text
+    
+    if check_password(password=password):
+        change_db_password(student_id=student.id, new_password=password)
+        
+        student = get_student(login=login)
+        user_data["student"] = student
+
+        await update.message.reply_text(
+            text=f"Успешно!",
+            reply_markup=ReplyGenerator.profile_markup()
+        )
+        
+        return PROFILE
+    else:
+        await update.message.reply_text(
+            text="Пароль не соответствует требованиям. Попробуйте ещё раз."
+        )
+        
+        return CHANGE_PASSWORD
 
 
 async def show_main_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    # основное меню с кнопками после ввода правильного пароля
-    pass
+    await update.message.reply_text(
+        text="Выберите дальнейшее действие",
+        reply_markup=ReplyGenerator.menu_markup()
+    )
+    
+    return MENU
 
 
 async def quit_profile(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    # что-то для выхода из бота, скорее всего клавиатура с кнопкой "Войти",
-    # чтобы можно было сразу войти обратно
     pass
 
 

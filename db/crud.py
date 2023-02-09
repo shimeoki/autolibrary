@@ -409,6 +409,46 @@ class StudentRepo(RepoBase):
         
         return True
     
+    def update_login(self, new_login: str, item_id: int) -> bool:
+        session = self._session
+        
+        student = self.read_by_id(item_id)
+        
+        if not student:
+            return False
+        
+        stmt = (
+            update(Student)
+            .where(Student.id == item_id)
+            .values(login=new_login)
+        )
+        
+        session.execute(stmt)
+        session.commit()
+        
+        return True
+    
+    def update_password(self, new_password: str, item_id: int) -> bool:
+        session = self._session
+        
+        student = self.read_by_id(item_id)
+        
+        if not student:
+            return False
+        
+        hashed_password = get_hashed_password(new_password)
+        
+        stmt = (
+            update(Student)
+            .where(Student.id == item_id)
+            .values(hashed_password=hashed_password)
+        )
+        
+        session.execute(stmt)
+        session.commit()
+        
+        return True
+    
     def delete(self, item_id: int) -> bool:
         response = super().delete(item_id=item_id)
         

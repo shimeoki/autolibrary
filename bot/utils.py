@@ -6,8 +6,8 @@ from telegram import ReplyKeyboardMarkup
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from db.crud import StudentRepo
-from db.models import Student
+from db.crud import StudentRepo, BookRepo
+from db.models import Student, Book
 
 
 with open('D:/GitHub/.misc/tokens.json', 'r') as f:
@@ -15,22 +15,18 @@ with open('D:/GitHub/.misc/tokens.json', 'r') as f:
 
 engine = create_engine(db_token)
 
-
-class ItemPaginator:
-    def __init__(
-        self,
-        item_model,
-        lines: int,
-        columns: int
-    ) -> None:
-        self._engine = engine
-        self._item_model = item_model
-        
+class BookPaginator:
+    def __init__(self, lines: int, columns: int, buttons_type: int = 1, book_list: list | None = None) -> None:
         self._lines: int = lines
         self._columns: int = columns
         self._items_on_page: int = self._count_items_on_page()
         
-        self._items: list = self._get_items()
+        self._buttons_type: int = buttons_type
+        
+        if not book_list:
+            self._items: list = self._get_items()
+        else:
+            self._items: list = book_list
         
         self._current_page: int = 1
         self._pages: int = self._count_pages()
@@ -41,7 +37,7 @@ class ItemPaginator:
     
     @current_page.setter
     def current_page(self, value: int) -> None:
-        if value > self._pages or value < 1:
+        if value > self.pages or value < 1:
             raise IndexError("Page out of index.")
         
         self._current_page = value
@@ -86,9 +82,14 @@ class ItemPaginator:
         return items_on_page
     
     def _get_items(self) -> list:
-        with Session(self._engine) as session:
-            query = session.query(self._item_model)
-            return query.all()
+        session = Session(engine)
+        repo = BookRepo(session=session)
+        
+        books = repo.read()
+        
+        session.close()
+        
+        return books
     
     def _get_min_page_range(self) -> int:
         min_range = (self._current_page - 1) * self._items_on_page
@@ -104,7 +105,11 @@ class ItemPaginator:
         return max_range
 
     def _add_buttons(self) -> list:
-        buttons = ["<", "Обратно в меню", ">"]
+        if self._buttons_type == 1:
+            buttons = ["<", "Фильтры", "Обратно в меню", ">"]
+        else:
+            buttons = ["<", "Обратно в меню", ">"]
+        
         return buttons
  
     def show_page(self) -> ReplyKeyboardMarkup:
@@ -112,17 +117,24 @@ class ItemPaginator:
         
         min_range = self._get_min_page_range()
         max_range = self._get_max_page_range()
+        item_index = min_range
         
         column, line = 0, 0
         
-        for item in self._items[min_range:max_range]:
-            if column == self._columns:
+        while line < self.lines:
+            if item_index < max_range:
+                item = self._items[item_index]
+                keyboard[line].append(f"{item.title}\n{item.author}")
+                item_index += 1
+            else:
+                keyboard[line].append("-")
+                
+            column += 1
+            
+            if column == self.columns:
                 column = 0
                 line += 1
                 keyboard.append([])
-            
-            keyboard[line].append(item.title)
-            column += 1
         
         keyboard.append(self._add_buttons())
         
@@ -134,20 +146,24 @@ class ItemPaginator:
         return text
     
     def do_action(self, action: str) -> None:
-        if action == ">" and self._current_page != self._pages:
+        if action == ">" and self.current_page < self._pages:
             self.next()
-        elif action == "<" and self._current_page != 1:
+        elif action == "<" and self.current_page > 1:
             self.prev()
 
     def next(self) -> None:
-        if self._current_page == self._pages:
+        if self.current_page >= self.pages:
             raise IndexError("Page out of index.")
-        self._current_page += 1
+        self.current_page += 1
 
     def prev(self) -> None:
-        if self._current_page == 1:
+        if self.current_page <= 1:
             raise IndexError("Page out of index.")
-        self._current_page -= 1
+        self.current_page -= 1
+        
+    def update_book_list(self, book_list: list) -> None:
+        self._items = book_list
+        self._pages = self._count_pages()
 
 
 class ReplyGenerator:
@@ -188,6 +204,32 @@ def get_student(login: str) -> Student | None:
         return None
     else:
         return student[0]
+
+def get_book(title: str, author: str) -> Book | None:
+    session = Session(engine)
+    repo = BookRepo(session=session)
+    
+    book = repo.read(title=title, author=author)
+    
+    session.close()
+    
+    if not book:
+        return None
+    else:
+        return book[0]
+    
+def get_book_by_id(book_id: int) -> Book | None:
+    session = Session(engine)
+    repo = BookRepo(session=session)
+    
+    book = repo.read_by_id(item_id=book_id)
+    
+    session.close()
+    
+    if not book:
+        return None
+    else:
+        return book
 
 def change_db_login(student_id: int, new_login: str) -> None:
     session = Session(engine)

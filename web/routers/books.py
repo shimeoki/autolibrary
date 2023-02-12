@@ -33,8 +33,8 @@ def read_by_id(item_id: int, item_repo: Session = Depends(get_book_repo)):
 
 
 @router.get("/", response_model=list[Book | None], status_code=200)
-def read(item_repo: Session = Depends(get_book_repo)):
-    books = item_repo.read()
+def read(title: str | None = None, author: str | None = None, item_repo: Session = Depends(get_book_repo)):
+    books = item_repo.read(title=title, author=author)
     
     return books
 

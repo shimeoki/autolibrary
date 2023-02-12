@@ -110,10 +110,15 @@ class BookRepo(RepoBase):
         
         return book
   
-    def read(self) -> list[Book | None]:
+    def read(self, title: str | None = None, author: str | None = None) -> list[Book | None]:
         session = self._session
         
         stmt = select(Book)
+        
+        if title:
+            stmt = stmt.where(Book.title == title)
+        if author:
+            stmt = stmt.where(Book.author == author)
         
         books = session.scalars(stmt).all()
         

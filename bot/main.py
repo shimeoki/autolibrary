@@ -5,7 +5,7 @@ from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
-    #CallbackQueryHandler,
+    CallbackQueryHandler,
     ConversationHandler,
     filters
 )
@@ -18,12 +18,16 @@ from bot.commands import (
     PROFILE,
     CHANGE_LOGIN,
     CHANGE_PASSWORD,
+    BASKET,
     start,
     enter_login,
     enter_password,
     show_shop,
     show_shop_item,
+    show_shop_item_handler,
     show_basket,
+    show_basket_item,
+    show_basket_item_handler,
     show_inventory,
     show_profile,
     show_main_menu,
@@ -72,14 +76,21 @@ def main() -> None:
                 MessageHandler(filters.TEXT & ~(filters.COMMAND), changing_login)
             ],
             CHANGE_PASSWORD: [
-              MessageHandler(filters.TEXT & ~(filters.COMMAND), changing_password)
+                MessageHandler(filters.TEXT & ~(filters.COMMAND), changing_password)
             ],
             SHOP: [
                 MessageHandler(filters.Regex("^<$"), show_shop),
                 MessageHandler(filters.Regex("^>$"), show_shop),
                 MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu),
-                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), show_shop_item)#,
-                #CallbackQueryHandler()
+                MessageHandler(filters.TEXT & ~(filters.COMMAND), show_shop_item),
+                CallbackQueryHandler(show_shop_item_handler)
+            ],
+            BASKET: [
+                MessageHandler(filters.Regex("^<$"), show_basket),
+                MessageHandler(filters.Regex("^>$"), show_basket),
+                MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu),
+                MessageHandler(filters.TEXT & ~(filters.COMMAND), show_basket_item),
+                CallbackQueryHandler(show_basket_item_handler)
             ]
         },
         fallbacks=[MessageHandler(filters.Regex("^Выход$"), quit_profile)]

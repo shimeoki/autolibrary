@@ -1,23 +1,21 @@
-from telegram import Update
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ContextTypes
-
-from db.models import (
-    Book
-)
 
 from bot.utils import (
     ReplyGenerator,
-    ItemPaginator,
+    BookPaginator,
     change_db_login,
     change_db_password,
     check_login,
     check_password,
-    get_student
+    get_student,
+    get_book,
+    get_book_by_id
 )
 
 from db.password import verify_password
 
-LOGIN, PASSWORD, MENU, SHOP, PROFILE, CHANGE_LOGIN, CHANGE_PASSWORD = range(7)
+LOGIN, PASSWORD, MENU, SHOP, PROFILE, CHANGE_LOGIN, CHANGE_PASSWORD, BASKET = range(8)
 
 
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
@@ -26,12 +24,10 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     user_data["student"] = None
     user_data["login_status"] = None
     user_data["inventory"] = []
-    user_data["basket"] = []    
-    user_data["shop_paginator"] = ItemPaginator(
-        item_model=Book,
-        lines=3,
-        columns=3
-    )
+    user_data["basket_list"] = []
+    user_data["total_price"] = 0
+    user_data["shop_paginator"] = BookPaginator(lines=3, columns=2)
+    user_data["basket_paginator"] = BookPaginator(lines=3, columns=2, buttons_type=2, book_list=[])
     
     await update.message.reply_text(
         text="Привет! Введи свой логин, чтобы продолжить."
@@ -94,7 +90,8 @@ async def show_shop(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     callback_text = update.message.text
     paginator = user_data["shop_paginator"]
     
-    paginator.do_action(callback_text)
+    if callback_text in ["<", ">"]:
+        paginator.do_action(callback_text)
 
     text, reply_markup = paginator.page_text(), paginator.show_page()
     
@@ -107,16 +104,105 @@ async def show_shop(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def show_shop_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    # показать айтем в чате с кнопками для взаимодействия
-    pass
+    callback_text = update.message.text
+    title, author = callback_text.split("\n")
+
+    book = get_book(title=title, author=author)
+    
+    if not book:
+        return SHOP
+
+    await update.message.reply_text(
+        text=f"{book.title}\n{book.author}\nЦена: {book.price}",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Добавить в корзину", callback_data=book.id)]])
+    )
+
+
+async def show_shop_item_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    user_data = ctx.user_data
+    query = update.callback_query
+    
+    book = get_book_by_id(book_id=query.data)
+    
+    for i in user_data["basket_list"]:
+        if i.id == book.id:
+            await query.answer()
+            await query.edit_message_text(
+                text="Книга уже в вашей корзине."
+            )
+            
+            return
+    
+    user_data["basket_list"].append(book)
+    if book.price:
+        user_data["total_price"] += book.price
+    
+    await query.answer()
+    await query.edit_message_text(
+        text="Успешно добавлено в заказ."
+    )
 
 
 async def show_basket(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    # клавиатура через ItemPaginator со списком всех книг в корзине
-    # при нажатии появляется соответствующее описание книги в чате с кнопками
-    pass
+    user_data = ctx.user_data
+    callback_text = update.message.text
+    paginator = user_data["basket_paginator"]
+    
+    paginator.update_book_list(user_data["basket_list"])
+    
+    if callback_text in ["<", ">"]:
+        paginator.do_action(callback_text)
+
+    text, reply_markup = paginator.page_text(), paginator.show_page()
+    
+    await update.message.reply_text(
+        text=text,
+        reply_markup=reply_markup
+    )
+
+    return BASKET
 
 
+async def show_basket_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    callback_text = update.message.text
+    title, author = callback_text.split("\n")
+
+    book = get_book(title=title, author=author)
+    
+    if not book:
+        return BASKET
+
+    await update.message.reply_text(
+        text=f"{book.title}\n{book.author}\nЦена: {book.price}",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Удалить из корзины", callback_data=book.id)]])
+    )
+
+
+async def show_basket_item_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    user_data = ctx.user_data
+    query = update.callback_query
+    
+    book = get_book_by_id(book_id=query.data)
+    
+    for i in user_data["basket_list"]:
+        if i.id == book.id:
+            user_data["basket_list"].remove(i)
+            if book.price:
+                user_data["total_price"] -= book.price
+            
+            await query.answer()
+            await query.edit_message_text(
+                text="Успешно удалено из заказа."
+            )
+
+            return
+    
+    await query.answer()
+    await query.edit_message_text(
+        text="Книга отсутствует в вашей корзине."
+    )
+
+    
 async def show_inventory(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     # две кнопки: "книги в обработке" и "нужно отдать"
     # первая для книг, которые ещё не успел получить

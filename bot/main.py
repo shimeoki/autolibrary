@@ -31,11 +31,11 @@ from bot.commands import (
     show_inventory,
     show_profile,
     show_main_menu,
-    quit_profile,
     change_login,
     changing_login,
     change_password,
-    changing_password
+    changing_password,
+    order_checkout
 )
 
 
@@ -56,15 +56,16 @@ def main() -> None:
         entry_points=[CommandHandler("start", start)],
         states={
             LOGIN: [
-                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), enter_login)
+                MessageHandler(filters.TEXT & ~(filters.COMMAND), enter_login)
             ],
             PASSWORD: [
-                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), enter_password)
+                MessageHandler(filters.TEXT & ~(filters.COMMAND), enter_password)
             ],
             MENU: [
-                MessageHandler(filters.Regex("^Сделать заказ$"), show_shop),
+                MessageHandler(filters.Regex("^Магазин$"), show_shop),
                 MessageHandler(filters.Regex("^Корзина$"), show_basket),
-                MessageHandler(filters.Regex("^Активные книги$"), show_inventory),
+                MessageHandler(filters.Regex("^Оформить заказ$"), order_checkout),
+                MessageHandler(filters.Regex("^Инвентарь$"), show_inventory),
                 MessageHandler(filters.Regex("^Личный кабинет$"), show_profile)
             ],
             PROFILE: [
@@ -93,7 +94,7 @@ def main() -> None:
                 CallbackQueryHandler(show_basket_item_handler)
             ]
         },
-        fallbacks=[MessageHandler(filters.Regex("^Выход$"), quit_profile)]
+        fallbacks=[]
     )
     
     app.add_handler(conversation_handler)

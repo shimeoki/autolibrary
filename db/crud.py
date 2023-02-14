@@ -59,9 +59,9 @@ class RepoBase:
             return False
 
         stmt = (
-            update(self._model)
-            .where(self._model.id == item_id)
-            .values(item.dict())
+            update(self._model).
+            where(self._model.id == item_id).
+            values(item.dict())
         )
         
         session.execute(stmt)
@@ -96,9 +96,9 @@ class BookRepo(RepoBase):
         session = self._session
         
         stmt = (
-            select(Book)
-            .join(Book.state)
-            .where(BookState.name == "В обработке")
+            select(Book).
+            join(Book.state).
+            where(BookState.name == "В обработке")
         )
     
         books = session.scalars(stmt).all()
@@ -110,7 +110,7 @@ class BookRepo(RepoBase):
         
         return book
   
-    def read(self, title: str | None = None, author: str | None = None) -> list[Book | None]:
+    def read(self, title: str | None = None, author: str | None = None, student_id: int | None = None) -> list[Book | None]:
         session = self._session
         
         stmt = select(Book)
@@ -119,7 +119,22 @@ class BookRepo(RepoBase):
             stmt = stmt.where(Book.title == title)
         if author:
             stmt = stmt.where(Book.author == author)
+        if student_id:
+            stmt = stmt.join(Book.student).where(Student.id == student_id)
         
+        books = session.scalars(stmt).all()
+        
+        return books
+    
+    def read_available(self) -> list[Book | None]:
+        session = self._session
+        
+        stmt = (
+            select(Book).
+            join(Book.state).
+            where(BookState.name == "Свободна")
+        )
+    
         books = session.scalars(stmt).all()
         
         return books
@@ -134,9 +149,9 @@ class BookRepo(RepoBase):
             return False
         
         stmt = (
-            update(Book)
-            .where(Book.id == item_id)
-            .values(item.dict())
+            update(Book).
+            where(Book.id == item_id).
+            values(item.dict())
         )
     
         session.execute(stmt)
@@ -144,8 +159,38 @@ class BookRepo(RepoBase):
         
         return True
     
-    def update(self):
-        pass
+    def update(self, student_id: int, item_id: int) -> bool:
+        session = self._session
+        
+        db_item = self.read_by_id(item_id)
+    
+        if not db_item:
+            return False
+    
+        student_repo = StudentRepo(session=session)
+        student = student_repo.read_by_id(item_id=student_id)
+
+        if not student:
+            return False
+    
+        book_state_repo = BookStateRepo(session=session)
+        state = book_state_repo.read(name="В обработке")
+        
+        if not state:
+            return False
+    
+        state = state[0]
+            
+        stmt = (
+            update(Book).
+            where(Book.id == item_id).
+            values(state_id=state.id, student_id=student_id)
+        )
+    
+        session.execute(stmt)
+        session.commit()
+        
+        return True
     
     def delete(self, item_id: int) -> bool:
         response = super().delete(item_id=item_id)
@@ -399,9 +444,9 @@ class StudentRepo(RepoBase):
         hashed_password = get_hashed_password(item.password)
         
         stmt = (
-            update(Student)
-            .where(Student.id == item_id)
-            .values(
+            update(Student).
+            where(Student.id == item_id).
+            values(
                 first_name=item.first_name,
                 last_name=item.last_name,
                 login=item.login,
@@ -423,9 +468,9 @@ class StudentRepo(RepoBase):
             return False
         
         stmt = (
-            update(Student)
-            .where(Student.id == item_id)
-            .values(login=new_login)
+            update(Student).
+            where(Student.id == item_id).
+            values(login=new_login)
         )
         
         session.execute(stmt)
@@ -444,9 +489,9 @@ class StudentRepo(RepoBase):
         hashed_password = get_hashed_password(new_password)
         
         stmt = (
-            update(Student)
-            .where(Student.id == item_id)
-            .values(hashed_password=hashed_password)
+            update(Student).
+            where(Student.id == item_id).
+            values(hashed_password=hashed_password)
         )
         
         session.execute(stmt)

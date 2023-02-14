@@ -85,7 +85,7 @@ class BookPaginator:
         session = Session(engine)
         repo = BookRepo(session=session)
         
-        books = repo.read()
+        books = repo.read_available()
         
         session.close()
         
@@ -164,6 +164,9 @@ class BookPaginator:
     def update_book_list(self, book_list: list) -> None:
         self._items = book_list
         self._pages = self._count_pages()
+        
+    def update_books(self) -> None:
+        self._items = self._get_items()
 
 
 class ReplyGenerator:
@@ -173,10 +176,10 @@ class ReplyGenerator:
     @staticmethod
     def menu_markup() -> ReplyKeyboardMarkup:
         keyboard = [
-            ["Сделать заказ", "Корзина"],
-            ["Активные книги"],
-            ["Личный кабинет"],
-            ["Выход"]
+            ["Магазин"],
+            ["Корзина", "Оформить заказ"],
+            ["Инвентарь"],
+            ["Личный кабинет"]
         ]
         
         return ReplyKeyboardMarkup(keyboard=keyboard)
@@ -191,6 +194,15 @@ class ReplyGenerator:
     
         return ReplyKeyboardMarkup(keyboard=keyboard)
     
+
+def update_book(student_id: int, book_id: int) -> bool:
+    session = Session(engine)
+    repo = BookRepo(session=session)
+    
+    result = repo.update(student_id=student_id, item_id=book_id)
+    
+    return result
+
 
 def get_student(login: str) -> Student | None:
     session = Session(engine)

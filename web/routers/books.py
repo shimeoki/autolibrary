@@ -22,6 +22,13 @@ def read_pending(item_repo: Session = Depends(get_book_repo)):
     return books
 
 
+@router.get("/available", response_model=list[Book | None], status_code=200)
+def read_available(item_repo: Session = Depends(get_book_repo)):
+    books = item_repo.read_available()
+    
+    return books
+
+
 @router.get("/{item_id}", response_model=Book, status_code=200)
 def read_by_id(item_id: int, item_repo: Session = Depends(get_book_repo)):
     book = item_repo.read_by_id(item_id)
@@ -33,10 +40,20 @@ def read_by_id(item_id: int, item_repo: Session = Depends(get_book_repo)):
 
 
 @router.get("/", response_model=list[Book | None], status_code=200)
-def read(title: str | None = None, author: str | None = None, item_repo: Session = Depends(get_book_repo)):
-    books = item_repo.read(title=title, author=author)
+def read(title: str | None = None, author: str | None = None, student_id: int | None = None, item_repo: Session = Depends(get_book_repo)):
+    books = item_repo.read(title=title, author=author, student_id=student_id)
     
     return books
+
+
+@router.put("/{item_id}", status_code=204)
+def update(student_id: int, item_id: int, item_repo: Session = Depends(get_book_repo)):
+    response = item_repo.update(student_id=student_id, item_id=item_id)
+
+    if response:
+        return
+    else:
+        raise HTTPException(status_code=404, detail="Something not found")
 
 
 @router.patch("/{item_id}", status_code=204)

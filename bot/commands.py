@@ -10,7 +10,8 @@ from bot.utils import (
     check_password,
     get_student,
     get_book,
-    get_book_by_id
+    get_book_by_id,
+    update_book
 )
 
 from db.password import verify_password
@@ -116,6 +117,8 @@ async def show_shop_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         text=f"{book.title}\n{book.author}\nЦена: {book.price}",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Добавить в корзину", callback_data=book.id)]])
     )
+    
+    return SHOP
 
 
 async def show_shop_item_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
@@ -176,9 +179,11 @@ async def show_basket_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
         text=f"{book.title}\n{book.author}\nЦена: {book.price}",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Удалить из корзины", callback_data=book.id)]])
     )
+    
+    return BASKET
 
 
-async def show_basket_item_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+async def show_basket_item_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     user_data = ctx.user_data
     query = update.callback_query
     
@@ -202,6 +207,45 @@ async def show_basket_item_handler(update: Update, ctx: ContextTypes.DEFAULT_TYP
         text="Книга отсутствует в вашей корзине."
     )
 
+
+async def order_checkout(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    user_data = ctx.user_data
+    
+    if len(user_data["basket_list"]) == 0:
+        await update.message.reply_text(
+            text="Корзина пуста.",
+            reply_markup=ReplyGenerator.menu_markup()
+        )
+
+        return MENU
+    
+    count = 0
+    
+    for book in user_data["basket_list"]:
+        result = update_book(student_id=user_data["student"].id, book_id=book.id)
+        
+        if not result:
+            for j in range(count):
+                user_data["basket_list"].pop(0)
+            
+            await update.message.reply_text(
+                text="Произошла непредвиденная ошибка. Книги, которые были заказаны, удалены из вашей корзины.",
+                reply_markup=ReplyGenerator.menu_markup()
+            )
+            
+            return MENU
+        
+        count += 1
+        
+    user_data["basket_list"].clear()
+    
+    await update.message.reply_text(
+        text="Книги успешно заказаны.",
+        reply_markup=ReplyGenerator.menu_markup()
+    )
+
+    return MENU
+    
     
 async def show_inventory(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     # две кнопки: "книги в обработке" и "нужно отдать"
@@ -295,10 +339,3 @@ async def show_main_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     )
     
     return MENU
-
-
-async def quit_profile(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    pass
-
-
-#! сделать выход по желанию из ввода логина и пароля (добавить клавиатуру с кнопкой "Выход")

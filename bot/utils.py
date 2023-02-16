@@ -16,12 +16,12 @@ with open('D:/GitHub/.misc/tokens.json', 'r') as f:
 engine = create_engine(db_token)
 
 class BookPaginator:
-    def __init__(self, lines: int, columns: int, buttons_type: int = 1, book_list: list | None = None) -> None:
+    def __init__(self, lines: int, columns: int, additional_button: str | None = None, book_list: list | None = None) -> None:
         self._lines: int = lines
         self._columns: int = columns
         self._items_on_page: int = self._count_items_on_page()
         
-        self._buttons_type: int = buttons_type
+        self._additional_button: str | None = additional_button
         
         if not book_list:
             self._items: list = self._get_items()
@@ -105,8 +105,8 @@ class BookPaginator:
         return max_range
 
     def _add_buttons(self) -> list:
-        if self._buttons_type == 1:
-            buttons = ["<", "Фильтры", "Обратно в меню", ">"]
+        if self._additional_button:
+            buttons = ["<", self._additional_button, "Обратно в меню", ">"]
         else:
             buttons = ["<", "Обратно в меню", ">"]
         
@@ -167,6 +167,7 @@ class BookPaginator:
         
     def update_books(self) -> None:
         self._items = self._get_items()
+        self._pages = self._count_pages()
 
 
 class ReplyGenerator:
@@ -177,7 +178,7 @@ class ReplyGenerator:
     def menu_markup() -> ReplyKeyboardMarkup:
         keyboard = [
             ["Магазин"],
-            ["Корзина", "Оформить заказ"],
+            ["Корзина"],
             ["Инвентарь"],
             ["Личный кабинет"]
         ]
@@ -189,11 +190,31 @@ class ReplyGenerator:
         keyboard = [
             ["Поменять логин"],
             ["Поменять пароль"],
-            ["Обратно в меню"]
+            ["Обратно в меню"],
+            ["Выход"]
         ]
     
         return ReplyKeyboardMarkup(keyboard=keyboard)
     
+    @staticmethod
+    def inventory_markup() -> ReplyKeyboardMarkup:
+        keyboard = [
+            ["В обработке"],
+            ["Для выдачи"],
+            ["На руках"],
+            ["Обратно в меню"]
+        ]
+        
+        return ReplyKeyboardMarkup(keyboard=keyboard)
+    
+    @staticmethod
+    def changing_credentials_markup() -> ReplyKeyboardMarkup:
+        keyboard = [
+            ["Обратно в меню"]
+        ]
+        
+        return ReplyKeyboardMarkup(keyboard=keyboard)
+
 
 def update_book(student_id: int, book_id: int) -> bool:
     session = Session(engine)
@@ -203,6 +224,16 @@ def update_book(student_id: int, book_id: int) -> bool:
     
     return result
 
+
+def get_inventory_books(student_id: int, state_name: str) -> list[Book | None]:
+    session = Session(engine)
+    repo = BookRepo(session=session)
+    
+    books = repo.read(student_id=student_id, state_name=state_name)
+    
+    session.close()
+    
+    return books
 
 def get_student(login: str) -> Student | None:
     session = Session(engine)

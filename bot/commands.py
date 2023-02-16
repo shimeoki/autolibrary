@@ -1,5 +1,5 @@
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, ConversationHandler
 
 from bot.utils import (
     ReplyGenerator,
@@ -11,27 +11,32 @@ from bot.utils import (
     get_student,
     get_book,
     get_book_by_id,
-    update_book
+    update_book,
+    get_inventory_books
 )
 
 from db.password import verify_password
 
-LOGIN, PASSWORD, MENU, SHOP, PROFILE, CHANGE_LOGIN, CHANGE_PASSWORD, BASKET = range(8)
+LOGIN, PASSWORD, MENU, SHOP, PROFILE, CHANGE_LOGIN, CHANGE_PASSWORD, BASKET, INVENTORY = range(9)
 
 
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     user_data = ctx.user_data
     
     user_data["student"] = None
-    user_data["login_status"] = None
-    user_data["inventory"] = []
-    user_data["basket_list"] = []
+    
     user_data["total_price"] = 0
-    user_data["shop_paginator"] = BookPaginator(lines=3, columns=2)
-    user_data["basket_paginator"] = BookPaginator(lines=3, columns=2, buttons_type=2, book_list=[])
+    user_data["basket_list"] = []
+    
+    user_data["inventory_filter"] = None
+    
+    user_data["shop_paginator"] = BookPaginator(lines=3, columns=2, additional_button="Фильтры")
+    user_data["basket_paginator"] = BookPaginator(lines=3, columns=2, additional_button="Оформить заказ", book_list=[])
+    user_data["inventory_paginator"] = BookPaginator(lines=3, columns=2, additional_button="Обратно в инвентарь", book_list=[])
+    
     
     await update.message.reply_text(
-        text="Привет! Введи свой логин, чтобы продолжить."
+        text="Введите свой логин, чтобы продолжить."
     )
     
     return LOGIN
@@ -73,8 +78,6 @@ async def enter_password(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         )
 
         return LOGIN
-
-    user_data["login_status"] = True
     
     text = f"Добро пожаловать, {student.last_name} {student.first_name}!"
     
@@ -91,6 +94,8 @@ async def show_shop(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     callback_text = update.message.text
     paginator = user_data["shop_paginator"]
     
+    paginator.update_books()
+    
     if callback_text in ["<", ">"]:
         paginator.do_action(callback_text)
 
@@ -106,7 +111,11 @@ async def show_shop(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def show_shop_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     callback_text = update.message.text
-    title, author = callback_text.split("\n")
+    
+    try:
+        title, author = callback_text.split("\n")
+    except ValueError:
+        return INVENTORY
 
     book = get_book(title=title, author=author)
     
@@ -168,7 +177,11 @@ async def show_basket(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def show_basket_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     callback_text = update.message.text
-    title, author = callback_text.split("\n")
+    
+    try:
+        title, author = callback_text.split("\n")
+    except ValueError:
+        return INVENTORY
 
     book = get_book(title=title, author=author)
     
@@ -247,11 +260,61 @@ async def order_checkout(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     return MENU
     
     
+async def show_inventory_buttons(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        text="Выберите категорию для просмотра.",
+        reply_markup=ReplyGenerator.inventory_markup()
+    )
+
+    return INVENTORY
+
+
 async def show_inventory(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    # две кнопки: "книги в обработке" и "нужно отдать"
-    # первая для книг, которые ещё не успел получить
-    # вторая для книг, которые нужно будет отдать
-    pass
+    user_data = ctx.user_data
+    callback_text = update.message.text
+    
+    if callback_text in ["В обработке", "Для выдачи", "На руках"]:
+        user_data["inventory_filter"] = callback_text
+    
+    paginator = user_data["inventory_paginator"]
+    book_list = get_inventory_books(
+        student_id=user_data["student"].id, 
+        state_name=user_data["inventory_filter"]
+    )
+    
+    paginator.update_book_list(book_list=book_list)
+    
+    if callback_text in ["<", ">"]:
+        paginator.do_action(callback_text)
+
+    text, reply_markup = paginator.page_text(), paginator.show_page()
+    
+    await update.message.reply_text(
+        text=text,
+        reply_markup=reply_markup
+    )
+
+    return INVENTORY
+
+
+async def show_inventory_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    callback_text = update.message.text
+    
+    try:
+        title, author = callback_text.split("\n")
+    except ValueError:
+        return INVENTORY
+
+    book = get_book(title=title, author=author)
+    
+    if not book:
+        return INVENTORY
+
+    await update.message.reply_text(
+        text=f"{book.title}\n{book.author}\nЦена: {book.price}"
+    )
+    
+    return INVENTORY
 
 
 async def show_profile(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
@@ -267,7 +330,8 @@ async def change_login(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     student = ctx.user_data["student"]
     
     await update.message.reply_text(
-        text=f"Введите новый логин. Требования:\n\n1. Логин должен быть уникальным.\n2. Буквы латинского алфавита, цифры и нижнее подчёркивание.\n3. От 2 до 32 символов.\n\nТекущий логин: {student.login}."
+        text=f"Введите новый логин. Требования:\n\n1. Логин должен быть уникальным.\n2. Буквы латинского алфавита, цифры и нижнее подчёркивание.\n3. От 2 до 32 символов.\n\nТекущий логин: {student.login}.",
+        reply_markup=ReplyGenerator.changing_credentials_markup()
     )
     
     return CHANGE_LOGIN
@@ -292,7 +356,8 @@ async def changing_login(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         return PROFILE
     else:
         await update.message.reply_text(
-            text="Логин не соответствует требованиям. Попробуйте ещё раз."
+            text="Логин не соответствует требованиям. Попробуйте ещё раз.",
+            reply_markup=ReplyGenerator.changing_credentials_markup()
         )
         
         return CHANGE_LOGIN
@@ -300,7 +365,8 @@ async def changing_login(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def change_password(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text(
-        text="Введите новый пароль. Требования:\n\n1. Буквы латинского алфавита и цифры.\n2. От 2 до 32 символов."
+        text="Введите новый пароль. Требования:\n\n1. Буквы латинского алфавита и цифры.\n2. От 2 до 32 символов.",
+        reply_markup=ReplyGenerator.changing_credentials_markup()
     )
     
     return CHANGE_PASSWORD
@@ -326,7 +392,8 @@ async def changing_password(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> i
         return PROFILE
     else:
         await update.message.reply_text(
-            text="Пароль не соответствует требованиям. Попробуйте ещё раз."
+            text="Пароль не соответствует требованиям. Попробуйте ещё раз.",
+            reply_markup=ReplyGenerator.changing_credentials_markup()
         )
         
         return CHANGE_PASSWORD
@@ -339,3 +406,13 @@ async def show_main_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     )
     
     return MENU
+
+
+async def quit_profile(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    ctx.user_data.clear()
+    
+    await update.message.reply_text(
+        text="До встречи!"
+    )
+    
+    return ConversationHandler.END

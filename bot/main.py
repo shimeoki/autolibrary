@@ -19,6 +19,7 @@ from bot.commands import (
     CHANGE_LOGIN,
     CHANGE_PASSWORD,
     BASKET,
+    INVENTORY,
     start,
     enter_login,
     enter_password,
@@ -28,14 +29,17 @@ from bot.commands import (
     show_basket,
     show_basket_item,
     show_basket_item_handler,
-    show_inventory,
+    show_inventory_buttons,
     show_profile,
     show_main_menu,
     change_login,
     changing_login,
     change_password,
     changing_password,
-    order_checkout
+    order_checkout,
+    quit_profile,
+    show_inventory,
+    show_inventory_item
 )
 
 
@@ -56,16 +60,15 @@ def main() -> None:
         entry_points=[CommandHandler("start", start)],
         states={
             LOGIN: [
-                MessageHandler(filters.TEXT & ~(filters.COMMAND), enter_login)
+                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), enter_login)
             ],
             PASSWORD: [
-                MessageHandler(filters.TEXT & ~(filters.COMMAND), enter_password)
+                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), enter_password)
             ],
             MENU: [
                 MessageHandler(filters.Regex("^Магазин$"), show_shop),
                 MessageHandler(filters.Regex("^Корзина$"), show_basket),
-                MessageHandler(filters.Regex("^Оформить заказ$"), order_checkout),
-                MessageHandler(filters.Regex("^Инвентарь$"), show_inventory),
+                MessageHandler(filters.Regex("^Инвентарь$"), show_inventory_buttons),
                 MessageHandler(filters.Regex("^Личный кабинет$"), show_profile)
             ],
             PROFILE: [
@@ -74,27 +77,38 @@ def main() -> None:
                 MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu)
             ],
             CHANGE_LOGIN: [
-                MessageHandler(filters.TEXT & ~(filters.COMMAND), changing_login)
+                MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu),
+                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), changing_login)
             ],
             CHANGE_PASSWORD: [
-                MessageHandler(filters.TEXT & ~(filters.COMMAND), changing_password)
+                MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu),
+                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), changing_password)
             ],
             SHOP: [
                 MessageHandler(filters.Regex("^<$"), show_shop),
                 MessageHandler(filters.Regex("^>$"), show_shop),
                 MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu),
-                MessageHandler(filters.TEXT & ~(filters.COMMAND), show_shop_item),
+                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), show_shop_item),
                 CallbackQueryHandler(show_shop_item_handler)
             ],
             BASKET: [
                 MessageHandler(filters.Regex("^<$"), show_basket),
                 MessageHandler(filters.Regex("^>$"), show_basket),
+                MessageHandler(filters.Regex("^Оформить заказ$"), order_checkout),
                 MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu),
-                MessageHandler(filters.TEXT & ~(filters.COMMAND), show_basket_item),
+                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), show_basket_item),
                 CallbackQueryHandler(show_basket_item_handler)
-            ]
+            ],
+            INVENTORY: [
+                MessageHandler(filters.Regex("^(В обработке|Для выдачи|На руках)$"), show_inventory),
+                MessageHandler(filters.Regex("^<$"), show_inventory),
+                MessageHandler(filters.Regex("^>$"), show_inventory),
+                MessageHandler(filters.Regex("^Обратно в инвентарь$"), show_inventory_buttons),
+                MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu),
+                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), show_inventory_item)
+            ],
         },
-        fallbacks=[]
+        fallbacks=[MessageHandler(filters.Regex("^Выход$"), quit_profile)]
     )
     
     app.add_handler(conversation_handler)

@@ -23,8 +23,8 @@ def read_pending(item_repo: Session = Depends(get_book_repo)):
 
 
 @router.get("/available", response_model=list[Book | None], status_code=200)
-def read_available(item_repo: Session = Depends(get_book_repo)):
-    books = item_repo.read_available()
+def search_available(title: str | None = None, author: str | None = None, item_repo: Session = Depends(get_book_repo)):
+    books = item_repo.search_available(title=title, author=author)
     
     return books
 

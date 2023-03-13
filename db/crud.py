@@ -24,6 +24,7 @@ from db.schemas import (
     StudentCreate, 
     BookStateCreate
 )
+
 from db.password import get_hashed_password
 
 
@@ -128,7 +129,7 @@ class BookRepo(RepoBase):
         
         return books
     
-    def read_available(self) -> list[Book | None]:
+    def search_available(self, title: str | None = None, author: str | None = None) -> list[Book | None]:
         session = self._session
         
         stmt = (
@@ -137,7 +138,21 @@ class BookRepo(RepoBase):
             where(BookState.name == "Свободна")
         )
     
-        books = session.scalars(stmt).all()
+        all_books = session.scalars(stmt).all()
+        books = []
+        
+        if not title and not author:
+            books = all_books
+        else:
+            for book in all_books:
+                if title:
+                    if title not in book.title:
+                        continue
+                if author:
+                    if author not in book.author:
+                        continue
+                        
+                books.append(book)
         
         return books
     

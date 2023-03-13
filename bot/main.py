@@ -1,5 +1,4 @@
 import logging
-from json import load
 
 from telegram.ext import (
     Application,
@@ -10,37 +9,16 @@ from telegram.ext import (
     filters
 )
 
-from bot.commands import (
-    LOGIN,
-    PASSWORD,
-    MENU,
-    SHOP,
-    PROFILE,
-    CHANGE_LOGIN,
-    CHANGE_PASSWORD,
-    BASKET,
-    INVENTORY,
-    start,
-    enter_login,
-    enter_password,
-    show_shop,
-    show_shop_item,
-    show_shop_item_handler,
-    show_basket,
-    show_basket_item,
-    show_basket_item_handler,
-    show_inventory_buttons,
-    show_profile,
-    show_main_menu,
-    change_login,
-    changing_login,
-    change_password,
-    changing_password,
-    order_checkout,
-    quit_profile,
-    show_inventory,
-    show_inventory_item
-)
+from bot.commands.authorization import enter_login, enter_password, start
+from bot.commands.menu import show_main_menu
+from bot.commands.shop import show_shop, show_shop_item, show_shop_item_handler
+from bot.commands.filters import show_filters, changing_filter
+from bot.commands.inventory import show_inventory, show_inventory_buttons, show_inventory_item
+from bot.commands.basket import show_basket, show_basket_item, show_basket_item_handler, order_checkout
+from bot.commands.profile import show_profile, quit_profile, change_login, changing_login, change_password, changing_password
+from bot.constants import *
+
+from bot.tokens import bot_token
 
 
 logging.basicConfig(
@@ -48,9 +26,6 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-
-with open('D:/GitHub/.misc/tokens.json', 'r') as f:
-    bot_token = load(f)["bot-token"]
 
 
 def main() -> None:
@@ -88,6 +63,7 @@ def main() -> None:
                 MessageHandler(filters.Regex("^<$"), show_shop),
                 MessageHandler(filters.Regex("^>$"), show_shop),
                 MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu),
+                MessageHandler(filters.Regex("^Фильтры$"), show_filters),
                 MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), show_shop_item),
                 CallbackQueryHandler(show_shop_item_handler)
             ],
@@ -107,6 +83,13 @@ def main() -> None:
                 MessageHandler(filters.Regex("^Обратно в меню$"), show_main_menu),
                 MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), show_inventory_item)
             ],
+            FILTERS: [
+                MessageHandler(filters.Regex("^Обратно в магазин$"), show_shop),
+                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), changing_filter)
+            ],
+            CHANGE_FILTER: [
+                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex("^Выход$")), show_filters)
+            ]
         },
         fallbacks=[MessageHandler(filters.Regex("^Выход$"), quit_profile)]
     )

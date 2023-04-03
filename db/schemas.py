@@ -29,8 +29,7 @@ class BookCreate(BookBase):
     state_id: int
     
     
-class BookPatch(BaseModel):
-    state_id: int
+class BookToGive(BaseModel):
     receive_date: date
     return_date: date
 

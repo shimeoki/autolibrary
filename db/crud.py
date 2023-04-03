@@ -15,7 +15,7 @@ from db.models import (
 )
 from db.schemas import (
     BookCreate, 
-    BookPatch, 
+    BookToGive, 
     BookTypeCreate, 
     BookGenreCreate, 
     PublisherCreate, 
@@ -157,7 +157,13 @@ class BookRepo(RepoBase):
         return books
     
     
-    def patch(self, item: BookPatch, item_id: int) -> bool:
+    def update(self, item: BookCreate, item_id: int) -> bool:
+        response = super().update(item=item, item_id=item_id)
+        
+        return response
+    
+    
+    def on_hands_book(self, item_id: int) -> bool:
         session = self._session
         
         db_item = self.read_by_id(item_id)
@@ -165,10 +171,19 @@ class BookRepo(RepoBase):
         if not db_item:
             return False
         
+        book_state_repo = BookStateRepo(session=session)
+    
+        state = book_state_repo.read(name="На руках")
+            
+        if not state:
+            return False
+        
+        state = state[0]
+            
         stmt = (
             update(Book).
             where(Book.id == item_id).
-            values(item.dict())
+            values(state_id=state.id)
         )
     
         session.execute(stmt)
@@ -176,7 +191,67 @@ class BookRepo(RepoBase):
         
         return True
     
-    def update(self, student_id: int, item_id: int) -> bool:
+    
+    def to_give_book(self, item: BookToGive, item_id: int) -> bool:
+        session = self._session
+        
+        db_item = self.read_by_id(item_id)
+        
+        if not db_item:
+            return False
+        
+        book_state_repo = BookStateRepo(session=session)
+    
+        state = book_state_repo.read(name="Для выдачи")
+            
+        if not state:
+            return False
+        
+        state = state[0]
+            
+        stmt = (
+            update(Book).
+            where(Book.id == item_id).
+            values(item.dict()).
+            values(state_id=state.id)
+        )
+    
+        session.execute(stmt)
+        session.commit()
+        
+        return True
+    
+    
+    def clear_book(self, item_id: int) -> bool:
+        session = self._session
+        
+        db_item = self.read_by_id(item_id)
+        
+        if not db_item:
+            return False
+        
+        book_state_repo = BookStateRepo(session=session)
+    
+        state = book_state_repo.read(name="Свободна")
+            
+        if not state:
+            return False
+        
+        state = state[0]
+            
+        stmt = (
+            update(Book).
+            where(Book.id == item_id).
+            values(student_id=None, state_id=state.id, receive_date=None, return_date=None)
+        )
+    
+        session.execute(stmt)
+        session.commit()
+        
+        return True   
+    
+    
+    def queue_book(self, student_id: int, item_id: int) -> bool:
         session = self._session
         
         db_item = self.read_by_id(item_id)
@@ -208,6 +283,7 @@ class BookRepo(RepoBase):
         session.commit()
         
         return True
+    
     
     def delete(self, item_id: int) -> bool:
         response = super().delete(item_id=item_id)

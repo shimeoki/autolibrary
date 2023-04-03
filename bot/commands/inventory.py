@@ -57,7 +57,7 @@ async def show_inventory_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
         return INVENTORY
 
     await update.message.reply_text(
-        text=f"{book.title}\n{book.author}\nЦена: {book.price}"
+        text=f"{book.title}\n{book.author}\nДата получения: {book.receive_date}\nДата возвращения: {book.return_date}"
     )
     
     return INVENTORY

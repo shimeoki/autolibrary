@@ -9,7 +9,7 @@ def reserve_book(student_id: int, book_id: int) -> bool:
     session = Session(engine)
     repo = BookRepo(session=session)
     
-    result = repo.update(student_id=student_id, item_id=book_id)
+    result = repo.queue_book(student_id=student_id, item_id=book_id)
     
     return result
 

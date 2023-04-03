@@ -20,7 +20,7 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     
     user_data["shop_paginator"] = Paginator(rows=3, columns=2, additional_button="Фильтры")
     user_data["basket_paginator"] = Paginator(rows=3, columns=2, additional_button="Оформить заказ", book_list=[])
-    user_data["inventory_paginator"] = Paginator(rows=3, columns=2, additional_button="Обратно в инвентарь", book_list=[])
+    user_data["inventory_paginator"] = Paginator(rows=3, columns=2, additional_button="В инвентарь", book_list=[])
     
     user_data["shop_filters"] = {"title": None, "author": None}
     
